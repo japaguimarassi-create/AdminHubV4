@@ -90,7 +90,7 @@ jobs:
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.neuralhud.mobile.debug'"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.neuralhud.mobile.debug5'"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
           sha256sum "$APK"
 
