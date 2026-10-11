@@ -21,8 +21,8 @@ import java.util.Locale
 import kotlin.math.pow
 
 object JarvisCommandRouter {
-    private val openAppPattern = Regex("(?i)^(?:por favor\\s+)?(?:abra|abrir|abre|inicie|iniciar|execute|launch|open)\\s+(?:(?:o|a|app|aplicativo|programa)\\s+)?(.+)$")
-    private val searchPattern = Regex("(?i)^(?:pesquise|pesquisar|procure|procurar|busque|buscar|pesquisa|busca|encontre|pesquise na internet|search|google)\\s+(.+)$")
+    private val openAppPattern = Regex("(?i)^(?:(?:eu quero|quero|por favor)\\s+)?(?:abra|abrir|abre|inicie|iniciar|inicialize|inicializar|execute|executar|rode|rodar|lance|lancar|launch|open|start)\\s+(?:(?:o|a|app|aplicativo|programa)\\s+)?(.+)$")
+    private val searchPattern = Regex("(?i)^(?:pesquise na internet|pesquisar na internet|pesquise|pesquisar|procure|procurar|busque|buscar|pesquisa|busca|encontre|search|google)\\s+(.+)$")
     private val targetSearchPattern = Regex("(?i)^(?:pesquise|pesquisar|procure|procurar|busque|buscar|pesquisa|busca|search)\\s+(.+?)\\s+(?:no|na|em|dentro do|dentro da)\\s+([a-z0-9][a-z0-9 ._+-]+)$")
 
     fun execute(context: Context, rawText: String): String {
@@ -30,7 +30,6 @@ object JarvisCommandRouter {
         val raw = rawText.trim()
         if (raw.isEmpty()) return "Digite ou fale um comando."
         val normalized = normalize(raw)
-        val guess = JarvisLocalBrain.classify(appContext, raw)
 
         if (Regex("^(?:ajuda|help|comandos|o que voce sabe fazer|quais sao suas funcoes)$").matches(normalized)) {
             return helpText()
@@ -178,10 +177,6 @@ object JarvisCommandRouter {
 
         val search = searchPattern.matchEntire(raw)
         if (search != null) return launchWebSearch(appContext, search.groupValues[1].trim())
-        if (guess.intent == JarvisIntent.SEARCH_WEB && raw.split(" ").size >= 2) {
-            return launchWebSearch(appContext, raw)
-        }
-
         val parsed = LocalAutomationEngine.parse(raw)
         if (parsed != null && parsed.targetApp == null &&
             parsed.actions.none { it.type == LocalActionType.OPEN_APP }) {
@@ -200,6 +195,7 @@ object JarvisCommandRouter {
             return launchWebSearch(appContext, raw)
         }
 
+        val guess = JarvisLocalBrain.classify(appContext, raw)
         val learnedIntent = guess.intent.name.lowercase(Locale.ROOT).replace('_', ' ')
         return "Recebi o comando, mas não vou inventar uma ação. A rede local de 2.678 neurônios classificou como “$learnedIntent”. Você pode pedir uma pesquisa Web ou reformular como abrir, pesquisar, voltar, rolar, digitar ou tocar."
     }
@@ -339,7 +335,7 @@ object JarvisCommandRouter {
 
     private fun normalizeMath(value: String): String = normalize(value)
         .replace(Regex("\\bvezes\\b"), "*")
-        .replace(Regex("\\bmultipl icado por\\b"), "*")
+        .replace(Regex("\\bmultiplicado por\\b"), "*")
         .replace(Regex("\\bdividido por\\b"), "/")
         .replace(Regex("\\bmais\\b"), "+")
         .replace(Regex("\\bmenos\\b"), "-")
