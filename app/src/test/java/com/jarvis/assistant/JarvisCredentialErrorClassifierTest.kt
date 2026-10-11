@@ -10,6 +10,9 @@ class JarvisCredentialErrorClassifierTest {
         assertTrue(JarvisCredentialErrorClassifier.isAccountReauthFailure(
             IllegalStateException("[16] Account reauth failed.")
         ))
+        assertTrue(JarvisCredentialErrorClassifier.shouldTryAlternative(
+            IllegalStateException("[16] Account reauth failed.")
+        ))
     }
 
     @Test
@@ -20,9 +23,17 @@ class JarvisCredentialErrorClassifierTest {
     }
 
     @Test
-    fun doesNotTreatUserCancellationAsReauthenticationFailure() {
-        assertFalse(JarvisCredentialErrorClassifier.isAccountReauthFailure(
-            IllegalStateException("[16] Cancelled by user.")
+    fun recognizesNoCredentialMessagesForFallback() {
+        assertTrue(JarvisCredentialErrorClassifier.shouldTryAlternative(
+            IllegalStateException("No credential available from provider")
         ))
+    }
+
+    @Test
+    fun doesNotTreatUserCancellationAsReauthenticationFailure() {
+        val error = IllegalStateException("[16] Cancelled by user.")
+        assertFalse(JarvisCredentialErrorClassifier.isAccountReauthFailure(error))
+        assertTrue(JarvisCredentialErrorClassifier.isUserCancellation(error))
+        assertFalse(JarvisCredentialErrorClassifier.shouldTryAlternative(error))
     }
 }

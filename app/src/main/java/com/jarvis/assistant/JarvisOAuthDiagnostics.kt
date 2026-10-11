@@ -27,6 +27,19 @@ object JarvisOAuthDiagnostics {
 
     fun accountReauthGuidance(context: Context): String {
         val sha1 = signingCertificateSha1(context) ?: "não foi possível ler no dispositivo"
-        return "O Google recusou a reautenticação (erro 16). Uma causa comum é o cliente OAuth Android não corresponder à assinatura. No mesmo projeto Google Cloud do Client ID Web, cadastre um cliente Android com pacote '" + context.packageName + "' e SHA-1 '" + sha1 + "'. O setServerClientId deve continuar usando o Client ID Web. Depois reinstale a build com a assinatura correspondente e tente novamente."
+        return "O Google recusou a reautenticação. No mesmo projeto Google Cloud do Client ID Web, crie ou confira um cliente OAuth do tipo Android com pacote '" +
+            context.packageName + "' e SHA-1 '" + sha1 + "'. O app deve continuar usando o Client ID Web como serverClientId e audience do token."
+    }
+
+    fun credentialFailure(context: Context, error: Throwable): String {
+        if (JarvisCredentialErrorClassifier.isUserCancellation(error)) {
+            return "Login cancelado. Nenhuma conta foi conectada."
+        }
+        val base = accountReauthGuidance(context)
+        val detail = generateSequence(error) { it.cause }
+            .mapNotNull { it.message?.trim()?.takeIf(String::isNotBlank) }
+            .firstOrNull()
+            ?.take(140)
+        return if (detail.isNullOrBlank()) base else base + "\nDetalhe do Google: " + detail
     }
 }
