@@ -1,6 +1,9 @@
 package com.neuralhud.mobile
 
 import android.app.Activity
+import android.app.role.RoleManager
+import android.Manifest
+import android.content.pm.PackageManager
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -20,14 +23,18 @@ class MainActivity : Activity() {
     private lateinit var status: TextView
     private var permissionScreenOpened = false
     private var hudLaunched = false
+    private var configureAssistantScreen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = Color.rgb(13, 22, 33)
         window.navigationBarColor = Color.rgb(13, 22, 33)
+        configureAssistantScreen = intent.getBooleanExtra(EXTRA_CONFIGURE_ASSISTANT, false)
         renderScreen()
 
-        if (Settings.canDrawOverlays(this)) {
+        if (configureAssistantScreen) {
+            status.text = "Configure J.A.R.V.I.S. como assistente padrão do Android. O sistema pedirá sua confirmação."
+        } else if (Settings.canDrawOverlays(this)) {
             launchHud()
         } else {
             requestOverlayPermission()
@@ -72,6 +79,9 @@ class MainActivity : Activity() {
         }
         page.addView(status, matchWrap())
         addButton(page, "Permitir e continuar", true) { requestOverlayPermission() }
+        addButton(page, "Definir J.A.R.V.I.S. como assistente", true) {
+            requestAssistantRole()
+        }
         addButton(page, "Configurar automação", false) {
             try {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -111,10 +121,68 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (::status.isInitialized && Settings.canDrawOverlays(this) && !hudLaunched) {
+        if (::status.isInitialized && !configureAssistantScreen && Settings.canDrawOverlays(this) && !hudLaunched) {
             launchHud()
         } else if (::status.isInitialized && permissionScreenOpened && !Settings.canDrawOverlays(this)) {
             status.text = "A permissão continua desligada. Toque em “Permitir e continuar” para tentar novamente."
+        }
+    }
+
+    private fun requestAssistantRole() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            status.text = "Este Android não oferece a seleção de assistente via RoleManager."
+            return
+        }
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            @Suppress("DEPRECATION")
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_MIC_FOR_ASSISTANT)
+            return
+        }
+        launchAssistantRolePicker()
+    }
+
+    private fun launchAssistantRolePicker() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val manager = getSystemService(RoleManager::class.java)
+        if (manager == null || !manager.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
+            status.text = "Este Android não disponibilizou a função de assistente padrão. O HUD e os comandos locais continuam disponíveis."
+            return
+        }
+        if (manager.isRoleHeld(RoleManager.ROLE_ASSISTANT)) {
+            status.text = "J.A.R.V.I.S. já é o assistente padrão. Use o gesto de assistente definido nas configurações do telefone."
+            return
+        }
+        try {
+            @Suppress("DEPRECATION")
+            startActivityForResult(manager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT), REQUEST_ASSISTANT_ROLE)
+            status.text = "Confirme na janela do Android para escolher J.A.R.V.I.S. como assistente."
+        } catch (e: Exception) {
+            status.text = "Não consegui abrir a seleção de assistente: " + (e.message ?: e.javaClass.simpleName)
+        }
+    }
+
+    @Deprecated("Uses Android role request result")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_MIC_FOR_ASSISTANT) {
+            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+                status.text = "Microfone permitido. Agora confirme o assistente padrão."
+            } else {
+                status.text = "Microfone negado; o assistente continuará aceitando comandos digitados."
+            }
+            launchAssistantRolePicker()
+        }
+    }
+
+    @Deprecated("Uses Android role request result")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ASSISTANT_ROLE) {
+            status.text = if (resultCode == RESULT_OK) {
+                "J.A.R.V.I.S. foi escolhido como assistente. Configure o gesto de invocação nas opções do Android."
+            } else {
+                "A escolha do assistente foi cancelada. Você pode tentar novamente."
+            }
         }
     }
 
@@ -154,4 +222,10 @@ class MainActivity : Activity() {
 
     private fun matchWrap() = LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT)
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+
+    companion object {
+        const val EXTRA_CONFIGURE_ASSISTANT = "configure_jarvis_assistant"
+        private const val REQUEST_ASSISTANT_ROLE = 6801
+        private const val REQUEST_MIC_FOR_ASSISTANT = 6802
+    }
 }
