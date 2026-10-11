@@ -2,9 +2,12 @@ package com.jarvis.assistant
 
 import android.app.Activity
 import android.util.Base64
+import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.Dispatchers
@@ -35,16 +38,40 @@ object JarvisAuthRepository {
             nonceBytes,
             Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
         )
-        val option = GetSignInWithGoogleOption.Builder(clientId)
+        val credentialManager = CredentialManager.create(activity)
+        val buttonOption = GetSignInWithGoogleOption.Builder(clientId)
             .setNonce(nonce)
             .build()
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(option)
+        val buttonRequest = GetCredentialRequest.Builder()
+            .addCredentialOption(buttonOption)
             .build()
-        val result = CredentialManager.create(activity).getCredential(
-            context = activity,
-            request = request
-        )
+        val result = try {
+            credentialManager.getCredential(context = activity, request = buttonRequest)
+        } catch (e: GetCredentialException) {
+            val reauthFailed = e.message.orEmpty().contains("Account reauth failed", ignoreCase = true)
+            if (!reauthFailed) throw e
+            try {
+                credentialManager.clearCredentialState(ClearCredentialStateRequest())
+            } catch (_: Exception) {
+            }
+            val fallbackOption = GetGoogleIdOption.Builder()
+                .setServerClientId(clientId)
+                .setFilterByAuthorizedAccounts(false)
+                .setAutoSelectEnabled(false)
+                .setNonce(nonce)
+                .build()
+            val fallbackRequest = GetCredentialRequest.Builder()
+                .addCredentialOption(fallbackOption)
+                .build()
+            try {
+                credentialManager.getCredential(context = activity, request = fallbackRequest)
+            } catch (fallbackError: Exception) {
+                throw IllegalStateException(
+                    "A reautenticação Google falhou. Tente escolher a conta novamente. Se continuar, o Google Cloud precisa de um cliente OAuth Android correspondente ao pacote e ao SHA-1 deste APK.",
+                    fallbackError
+                )
+            }
+        }
         val credential = result.credential as? CustomCredential
             ?: throw IllegalStateException("O provedor não retornou uma credencial Google compatível.")
         if (credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {

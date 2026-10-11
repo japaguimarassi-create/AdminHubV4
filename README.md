@@ -1,4 +1,4 @@
-# J.A.R.V.I.S. 12.0.0
+# J.A.R.V.I.S. 13.0.0
 
 J.A.R.V.I.S. now includes a bundled offline knowledge pack and an internal restricted sandbox alongside its Android assistant, conversation history, Google login flow, and local command interpreter.
 
@@ -26,4 +26,15 @@ Supabase project `JARVIS-Auth` is provisioned in São Paulo. The `jarvis-auth` E
 
 ## Build
 
-GitHub Actions runs local unit tests, assembles `com.jarvis.assistant.debug12`, validates the package/signature and uploads `jarvis-android-v12-debug-apk`. The debug APK is not a Play Store release signed with a permanent key.
+GitHub Actions runs local unit tests, assembles `com.jarvis.assistant.debug13`, validates the package/signature and uploads `jarvis-android-v13-debug-apk`. The debug APK is not a Play Store release signed with a permanent key.
+
+
+## Recovery for Google Credential Manager [16]
+
+The primary Sign in with Google button flow now detects the exact `Account reauth failed` condition, clears Credential Manager selection state, then retries using the standard Google ID account picker with `filterByAuthorizedAccounts(false)`. Other errors, including ordinary cancellations, are not silently retried.
+
+A separate Android OAuth client may still be required. For the v13 CI build, register an Android OAuth credential in the same Google Cloud project as the Web client:
+- Android package: `com.jarvis.assistant.debug13`
+- SHA-1: read the `Signer #1 certificate SHA-1 digest` from the successful v13 GitHub Actions run.
+
+The CI runner creates a debug signing key per run, so the fingerprint may change when another APK is built. For stable repeated sign-in across builds, configure a persistent signing keystore as a protected GitHub Actions secret and use that same certificate for each build. A Web OAuth Client ID alone does not replace the Android package/SHA-1 registration for the native Credential Manager flow.

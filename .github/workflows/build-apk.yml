@@ -51,11 +51,13 @@ jobs:
           test -s app/src/main/java/com/jarvis/assistant/JarvisKnowledgeBase.kt
           test -s app/src/main/java/com/jarvis/assistant/JarvisInternalSandbox.kt
           test -s app/src/main/assets/jarvis_knowledge.json
-          grep -q 'versionName = "12.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "13.0.0"' app/build.gradle.kts
           grep -q "SUPABASE_PUBLISHABLE_KEY" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
+          grep -q "Account reauth failed" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
+          grep -q "GetGoogleIdOption.Builder" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           test -s supabase/functions/jarvis-auth/index.ts
           test -s supabase/migrations/20261011000000_jarvis_global_owner.sql
-          grep -q 'versionName = "12.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "13.0.0"' app/build.gradle.kts
           grep -q 'android:name=".LoginActivity"' app/src/main/AndroidManifest.xml
           grep -q 'android:name=".JarvisVoiceInteractionService"' app/src/main/AndroidManifest.xml
           ! grep -q 'QUERY_ALL_PACKAGES' app/src/main/AndroidManifest.xml
@@ -71,7 +73,7 @@ jobs:
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.jarvis.assistant.debug12'"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.jarvis.assistant.debug13'"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK"
           sha256sum "$APK"
@@ -79,7 +81,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jarvis-android-v12-debug-apk
+          name: jarvis-android-v13-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
