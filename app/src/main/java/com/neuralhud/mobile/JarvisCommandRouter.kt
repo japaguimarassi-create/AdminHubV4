@@ -21,7 +21,7 @@ import java.util.Locale
 import kotlin.math.pow
 
 object JarvisCommandRouter {
-    private val openAppPattern = Regex("(?i)^(?:(?:eu quero|quero|por favor)\\s+)?(?:abra|abrir|abre|inicie|iniciar|inicialize|inicializar|execute|executar|rode|rodar|lance|lancar|launch|open|start)\\s+(?:(?:o|a|app|aplicativo|programa)\\s+)?(.+)$")
+    private val openAppPattern = Regex("(?i)^(?:(?:eu quero|quero|gostaria de|por favor)\\s+)?(?:abra|abrir|abre|abri|inicie|iniciar|inicialize|inicializar|execute|executar|rode|rodar|lance|lancar|acessar|acesse|visitar|visite|ir para|vá para|vai para|quero usar|launch|open|start|go to)\\s+(?:(?:o|a|os|as|um|uma|app|aplicativo|programa)\\s+)?(.+)$")
     private val searchPattern = Regex("(?i)^(?:pesquise na internet|pesquisar na internet|pesquise|pesquisar|procure|procurar|busque|buscar|pesquisa|busca|encontre|search|google)\\s+(.+)$")
     private val targetSearchPattern = Regex("(?i)^(?:pesquise|pesquisar|procure|procurar|busque|buscar|pesquisa|busca|search)\\s+(.+?)\\s+(?:no|na|em|dentro do|dentro da)\\s+([a-z0-9][a-z0-9 ._+-]+)$")
 
@@ -84,6 +84,27 @@ object JarvisCommandRouter {
         }
 
         val planned = LocalAutomationEngine.parse(raw)
+        if (planned != null && planned.targetApp == null &&
+            planned.actions.size > 1 && planned.actions.first().type == LocalActionType.OPEN_APP) {
+            val appAction = planned.actions.first()
+            val target = findLaunchableApp(appContext, appAction.argument)
+                ?: return "Não encontrei o app “" + appAction.argument + "”. Use o nome que aparece na tela inicial."
+            val remainingActions = planned.actions.drop(1)
+            val actionText = remainingActions.joinToString(" e depois ") { serializeAction(it) }
+            val armed = LocalAutomationEngine.saveInstruction(
+                appContext,
+                "Quando abrir " + target.label + ", " + actionText,
+                false
+            )
+            val launched = launchApp(appContext, target.label)
+            return if (launched) {
+                "J.A.R.V.I.S.: abrindo " + target.label + " e iniciando um plano de " +
+                    remainingActions.size + " etapas. " + armed
+            } else {
+                LocalAutomationEngine.clear(appContext)
+                "Não consegui abrir " + target.label + ". A automação foi cancelada."
+            }
+        }
         if (planned != null && planned.targetApp == null && planned.actions.size > 1) {
             if (!isAccessibilityEnabled(appContext)) {
                 return "Entendi um plano com ${planned.actions.size} etapas, mas a execução entre apps precisa do serviço J.A.R.V.I.S. em Acessibilidade. Ative-o e repita o comando."
@@ -300,6 +321,19 @@ object JarvisCommandRouter {
             "Pedido não mapeado como ação local. Categoria estimada pelo classificador: " + guess.intent.name.lowercase(Locale.ROOT).replace('_', ' ') + ". Abrindo pesquisa Web."
         )
         return launchWebSearch(appContext, raw)
+    }
+
+    private fun serializeAction(action: LocalAction): String = when (action.type) {
+        LocalActionType.SEARCH -> "pesquise " + action.argument
+        LocalActionType.TYPE_TEXT -> "digite " + action.argument
+        LocalActionType.CLICK_TEXT -> "toque em " + action.argument
+        LocalActionType.BACK -> "volte"
+        LocalActionType.HOME -> "ir para tela inicial"
+        LocalActionType.ENTER -> "pressione Enter"
+        LocalActionType.SCROLL_DOWN -> "role para baixo"
+        LocalActionType.SCROLL_UP -> "role para cima"
+        LocalActionType.OPEN_APP -> "abra " + action.argument
+        LocalActionType.WAIT -> "aguarde " + action.argument + " ms"
     }
 
     private fun globalAction(context: Context, action: String): String {
