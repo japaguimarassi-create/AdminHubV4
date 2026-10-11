@@ -49,7 +49,7 @@ jobs:
           if [ -z "$JARVIS_DEBUG_SIGNING_BUNDLE_B64" ]; then
             echo "JARVIS_STABLE_SIGNING=false" >> "$GITHUB_ENV"
             echo "stable=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Stable signing bundle is missing. No APK artifact will be published."
+            echo "::warning::Stable signing bundle is missing. An intermediate APK will be uploaded for stable re-signing."
             exit 0
           fi
           python3 - <<'PY'
@@ -94,7 +94,7 @@ jobs:
           grep -q "requestServerNonce" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           grep -q "setFilterByAuthorizedAccounts(authorizedOnly)" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           test -s app/src/main/java/com/jarvis/assistant/JarvisOAuthDiagnostics.kt
-          grep -q "JarvisOAuthDiagnostics.accountReauthGuidance" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
+          grep -q "JarvisOAuthDiagnostics.credentialFailure" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           grep -q "GetGoogleIdOption.Builder" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           test -s supabase/functions/jarvis-auth/index.ts
           test -s supabase/migrations/20261011000000_jarvis_global_owner.sql
