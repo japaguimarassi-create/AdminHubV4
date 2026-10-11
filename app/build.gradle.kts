@@ -10,7 +10,7 @@ val releaseStorePath = System.getenv("JARVIS_KEYSTORE_PATH")
 val releaseStorePassword = System.getenv("JARVIS_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("JARVIS_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("JARVIS_KEY_PASSWORD")
-val googleWebClientId = System.getenv("JARVIS_GOOGLE_WEB_CLIENT_ID").orEmpty()
+val googleWebClientId = System.getenv("JARVIS_GOOGLE_WEB_CLIENT_ID").takeUnless { it.isNullOrBlank() } ?: "188208581214-dtshluh0fkclfq8mnupaf2nn35l1flrc.appsgoogleusercontent.com"
 val jarvisAuthEndpoint = System.getenv("JARVIS_AUTH_ENDPOINT").orEmpty()
 val supabasePublishableKey = System.getenv("JARVIS_SUPABASE_PUBLISHABLE_KEY").orEmpty()
 val canSignRelease = listOf(
@@ -27,8 +27,8 @@ android {
         applicationId = "com.jarvis.assistant"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "10.0.0"
+        versionCode = 11
+        versionName = "11.0.0"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", quotedBuildConfig(googleWebClientId))
         buildConfigField("String", "JARVIS_AUTH_ENDPOINT", quotedBuildConfig(jarvisAuthEndpoint))
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", quotedBuildConfig(supabasePublishableKey))
@@ -54,7 +54,7 @@ android {
             if (canSignRelease) signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            applicationIdSuffix = ".debug10"
+            applicationIdSuffix = ".debug11"
             versionNameSuffix = "-debug"
         }
     }
