@@ -1,4 +1,4 @@
-package com.neuralhud.mobile
+package com.jarvis.assistant
 
 import android.os.Bundle
 import android.service.voice.VoiceInteractionSession
