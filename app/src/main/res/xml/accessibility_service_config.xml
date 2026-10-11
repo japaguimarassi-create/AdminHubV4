@@ -4,5 +4,4 @@
     android:accessibilityFeedbackType="feedbackGeneric"
     android:notificationTimeout="300"
     android:canRetrieveWindowContent="true"
-    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows"
-    android:packageNames="com.android.chrome,com.google.android.apps.chrome,com.neuralhud.mobile" />
+    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows" />
