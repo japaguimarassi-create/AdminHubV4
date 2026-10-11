@@ -1,4 +1,4 @@
-# J.A.R.V.I.S. 11.0.0
+# J.A.R.V.I.S. 12.0.0
 
 J.A.R.V.I.S. now includes a bundled offline knowledge pack and an internal restricted sandbox alongside its Android assistant, conversation history, Google login flow, and local command interpreter.
 
@@ -22,8 +22,8 @@ It is not an unrestricted shell: it never invokes bash, `ProcessBuilder`, `Runti
 
 ## Google identity backend
 
-Supabase project `JARVIS-Auth` is provisioned in São Paulo. The `jarvis-auth` Edge Function is deployed, and the database tables and atomic first-owner claim migration are applied. A Web OAuth Client ID has been supplied and wired into the Android build as public configuration: `188208581214-dtshluh0fkclfq8mnupaf2nn35l1flrc.appsgoogleusercontent.com`. The Edge Function still reads `GOOGLE_WEB_CLIENT_ID` from Supabase secrets unless the deployed function is updated to use this same public audience. Never place a Google Client Secret or Supabase service-role key in the APK or repository. The first account to complete real token validation claims the global owner row.
+Supabase project `JARVIS-Auth` is provisioned in São Paulo. The `jarvis-auth` Edge Function is deployed, and the database tables and atomic first-owner claim migration are applied. A Web OAuth Client ID has been supplied and wired into the Android build as public configuration: `188208581214-dtshluh0fkclfq8mnupaf2nn35l1flrc.appsgoogleusercontent.com`. The deployed Edge Function now uses `GOOGLE_WEB_CLIENT_ID` from Supabase secrets first and falls back to the same public audience embedded in this build. Never place a Google Client Secret or Supabase service-role key in the APK or repository. Never place a Google Client Secret or Supabase service-role key in the APK or repository. The first account to complete real token validation claims the global owner row.
 
 ## Build
 
-GitHub Actions runs local unit tests, assembles `com.jarvis.assistant.debug11`, validates the package/signature and uploads `jarvis-android-v11-debug-apk`. The debug APK is not a Play Store release signed with a permanent key.
+GitHub Actions runs local unit tests, assembles `com.jarvis.assistant.debug12`, validates the package/signature and uploads `jarvis-android-v12-debug-apk`. The debug APK is not a Play Store release signed with a permanent key.
