@@ -1,69 +1,85 @@
-# Neural HUD 4.0.0
+# J.A.R.V.I.S. + Neural HUD 5.0.0
 
-<p align="center"><img src="assets/neural-hud-emblem.svg" alt="Símbolo Neural HUD" width="160" /></p>
+<p align="center"><img src="assets/neural-hud-emblem.svg" alt="Símbolo J.A.R.V.I.S. Neural HUD" width="160" /></p>
 
-HUD flutuante Android com uma esfera arrastável e um painel de comandos compacto. A aplicação usa Kotlin nativo, não exige conta nem API de IA e mantém comandos e regras de edição no dispositivo.
+Assistente Android local com HUD flutuante, comandos, memória de macros e tentativa de integração com o assistente padrão do sistema. O motor de comandos e o classificador rodam no dispositivo e não chamam API de IA.
 
-## Fluxo principal
+## Como invocar globalmente
 
-1. Abra o app e conceda **Exibir sobre outros apps** quando o Android solicitar.
-2. O painel flutuante abre junto da esfera. Toque na esfera para ocultar ou reabrir o painel.
-3. Escreva uma instrução e toque em **Salvar e ativar**.
-4. Para permitir ações em outros aplicativos, abra **Acessibilidade** e habilite o serviço manualmente nas configurações Android.
-5. Arraste a esfera para reposicioná-la; o local fica salvo. **Ajustes** recolhe ou exibe controles de tamanho e opacidade.
+1. Instale o APK e abra **J.A.R.V.I.S.**.
+2. Conceda **Exibir sobre outros apps** se quiser a esfera flutuante.
+3. Toque em **Definir J.A.R.V.I.S. como assistente** e confirme na janela de papéis do Android.
+4. Conceda o microfone apenas se desejar tentar voz.
+5. Em Configurações do telefone, escolha o gesto/botão de Assistente para invocar J.A.R.V.I.S. globalmente. Esse gesto depende do fabricante e do Android.
+6. Para executar ações dentro de outros aplicativos, ative manualmente o serviço J.A.R.V.I.S. em **Configurações → Acessibilidade**.
 
-Exemplos de instrução suportados:
-- `Quando abrir YouTube, pesquise gatos`
-- `Quando abrir Chrome, digite https://example.com`
-- `Quando abrir YouTube, role para baixo`
-- `Quando abrir Chrome, volte`
+A integração usa as APIs oficiais `RoleManager.ROLE_ASSISTANT`, `VoiceInteractionService` e `VoiceInteractionSessionService`. O Android precisa disponibilizar o papel de assistente e o usuário precisa consentir. O app não consegue assumir essa função silenciosamente.
 
-O motor local reconhece um conjunto limitado de comandos para pesquisar, digitar, tocar em textos acessíveis, voltar, ir para a tela inicial, rolar, aguardar e abrir aplicativos. Ele não gera planos livres nem compreende tudo o que um LLM compreende. Ações que dependem de campos ocultos ou de interfaces personalizadas podem falhar. Campos de senha são ignorados.
+**Voz offline:** a sessão tenta usar o reconhecedor de voz *no dispositivo* para `pt-BR`. Funciona apenas quando o sistema tem um provedor/modelo local compatível instalado e o microfone foi permitido. Se não houver reconhecimento local, o comando digitado continua disponível. Não há uma palavra de ativação contínua tipo “Hey JARVIS” implementada nesta versão.
 
-## Ferramentas
+## Comandos locais
 
-A tela de ferramentas foi reduzida a três funções:
-- **Editar arquivo:** escolha um documento pelo seletor Android, peça uma transformação de texto ou edite manualmente.
-- **Pesquisar na Web:** abre uma pesquisa no navegador padrão. Essa pesquisa sai do dispositivo e segue as políticas do site escolhido.
-- **Aplicativos lançáveis:** mostra apenas apps que o Android disponibiliza como lançáveis; o app não solicita `QUERY_ALL_PACKAGES`.
+O roteador conhece várias formas comuns de pedir:
 
-### Editor de arquivos
+- **Apps e sites:** `abra o YouTube`, `quero abrir o Chrome`, `abra example.com`, `abra https://example.com`.
+- **Pesquisa:** `pesquise gatos`, `procure tutoriais de Kotlin`, `pesquise gatos no YouTube`.
+- **Ações no app aberto:** `digite olá`, `toque em Pesquisar`, `role para baixo`, `volte`, `aguarde 2 segundos`.
+- **Sistema:** `tela inicial`, `notificações`, `configurações rápidas`, `aplicativos recentes`, `capturar tela`, abrir configurações de Wi‑Fi/Bluetooth/bateria.
+- **Mídia e volume:** `aumentar volume`, `diminuir volume`, `silenciar`, `pausar música`.
+- **Cálculo e informação local:** `calcule (32 + 45) * 2`, `que horas são`, `qual a data de hoje`.
+- **Memória local:** `anote comprar pão`, `mostrar nota`.
 
-O editor só trabalha com documentos escolhidos explicitamente. Aceita conteúdo textual UTF-8 de até 512 KiB; arquivos binários não são editados. As regras locais suportadas incluem:
+Ações globais como voltar/início/notificações, e ações dentro de apps, só funcionam quando as permissões correspondentes foram concedidas e o Android expõe controles acessíveis. Alguns apps usam interfaces que não expõem seus botões/campos; senhas são ignoradas.
 
-- `substitua X por Y`
-- `adicionar ao final: texto`
-- `adicionar no início: texto`
-- `remover linhas contendo X`
-- `remover texto: X`
-- `substitua tudo por: texto`
+## Ensinar um comando novo sem API
 
-Antes da gravação, você pode revisar a proposta e conferir a prévia. A ação de salvar mostra uma confirmação, guarda os bytes anteriores na área privada do app e relê o documento para verificar a gravação. O comando **Restaurar último backup** recupera a cópia mais recente. O Android ou o provedor do documento pode negar a escrita. Backup local não substitui uma cópia separada de arquivos importantes: desinstalar o app ou apagar seus dados remove esses backups.
+A memória permite cadastrar até 100 atalhos locais que disparam ações que o roteador já sabe executar:
 
-## Privacidade e autorizações
+```
+ensine abrir aula => abra YouTube
+```
 
-- A esfera exige a permissão especial de sobreposição; remova-a nas configurações do Android se não quiser que o HUD fique sobre outros apps.
-- A automação exige que o usuário habilite manualmente o serviço de Acessibilidade. Esse serviço precisa observar a janela ativa e pode tocar ou inserir texto em controles expostos pela interface acessível. Ative-o somente se confiar no código e compreender esse acesso.
-- Não é enviado conteúdo de arquivos a uma API de IA. Instruções e preferências são armazenadas localmente.
-- O acesso à Web ocorre apenas quando você aciona a pesquisa.
-- O serviço flutuante usa uma notificação persistente enquanto está em execução e oferece uma ação explícita para encerrar.
-- O app trata a compatibilidade de áreas seguras do sistema no Android 15/16 e mira API 36. Isso reduz problemas de interface em versões recentes, mas não significa que o Google Play Protect tenha certificado o app.
+Depois, escrever **abrir aula** executa a ação ensinada. Também é possível usar `aprenda frase => ação` ou `memorize frase => ação`. O classificador local recebe feedback dessa associação e as macros ficam no armazenamento privado do aplicativo. Uma macro não dá capacidades novas ao Android: ela só encaminha para comandos já suportados. Para evitar ciclos, os atalhos encadeados têm profundidade limitada.
 
-## Compilação e APK
+## O que significa “2.678 neurônios”
 
-O workflow `.github/workflows/build-apk.yml` usa JDK 17, Gradle 8.11.1, Android Gradle Plugin 8.10.1 e Android SDK 36. Ele compila e verifica a assinatura do APK com `apksigner`.
+O classificador foi reconstruído com **2.678 unidades ocultas**, 256 características textuais de entrada e uma camada de saída para categorias de intenção. Os pesos são treinados com exemplos pequenos pré-programados e salvos localmente; os atalhos ensinados também alimentam o classificador.
 
-- **Debug:** identificador `com.neuralhud.mobile.debug`; serve para teste e pode coexistir com outra instalação do pacote final.
-- **Release:** identificador `com.neuralhud.mobile`; o artefato `neural-hud-release-apk` só é gerado quando os segredos da assinatura estão configurados.
+Isso **não é um modelo de linguagem grande (LLM)** e não torna o aplicativo equivalente ao Gemini. Quantidade de neurônios por si só não determina inteligência. Esse classificador estima categorias e ajuda a associar comandos; ele não contém conhecimento geral suficiente para inventar respostas detalhadas ou escrever qualquer código de forma confiável. Não há inferência de um LLM generativo embutido nesta versão.
 
-Segredos esperados em **Settings → Secrets and variables → Actions**: `NEURALHUD_KEYSTORE_BASE64`, `NEURALHUD_KEYSTORE_PASSWORD`, `NEURALHUD_KEY_ALIAS` e `NEURALHUD_KEY_PASSWORD`. A chave precisa permanecer privada e ser preservada para futuras atualizações do app. Não coloque a chave nem suas senhas em commits públicos.
+Quando um pedido não corresponde a uma ação local segura, o app abre uma pesquisa no navegador como alternativa. A consulta é enviada ao site pelo navegador e exige Internet; isso não é uma API de IA nem processamento offline.
 
-Abra a aba [Actions](https://github.com/japaguimarassi-create/AdminHubV4/actions) para consultar o estado da compilação e baixar os artefatos. Uma assinatura digital válida verifica integridade e identidade do assinante; não garante ausência de alertas do Android nem aprovação do Play Protect.
+## HUD
+
+- Esfera arrastável com posição persistida.
+- Painel compacto de comando e estado.
+- Ajustes de tamanho e opacidade recolhidos.
+- Ferramentas separadas para editar arquivos, pesquisar e listar apps lançáveis.
+- Editor de arquivos limitado a texto UTF-8 de até 512 KiB, com prévia, confirmação, backup privado e verificação após gravação.
+
+## Permissões e limites
+
+- **Sobreposição:** permite que a esfera e o painel apareçam sobre outros apps.
+- **Acessibilidade:** permite observar a janela ativa e interagir com elementos acessíveis depois de habilitação manual. Ative só se confiar no código e compreender o alcance.
+- **Microfone:** solicitado quando você escolhe configurar o assistente; usado na sessão de voz e sujeito à existência de reconhecimento local.
+- **Internet:** usada para abrir pesquisa no navegador; não é usada para chamar API de IA.
+- O Android pode negar ações globais, alguns gestos, acesso a interfaces de outros apps ou seleção do papel de assistente. O Play Protect pode exibir alertas; compilação/assinatura digital não equivalem a certificação Play Protect.
+
+## Compilar e baixar
+
+O workflow `.github/workflows/build-apk.yml` compila com JDK 17, Gradle 8.11.1, Android Gradle Plugin 8.10.1 e SDK/API 36. Antes de gerar o APK, executa testes unitários do interpretador, verifica a configuração e executa `apksigner`.
+
+- **Debug:** pacote `com.neuralhud.mobile.debug`, para teste.
+- **Release:** pacote `com.neuralhud.mobile`, produzido apenas se os segredos de assinatura estiverem configurados.
+
+Segredos esperados em **Settings → Secrets and variables → Actions**: `NEURALHUD_KEYSTORE_BASE64`, `NEURALHUD_KEYSTORE_PASSWORD`, `NEURALHUD_KEY_ALIAS` e `NEURALHUD_KEY_PASSWORD`. Preserve a chave privada e nunca a comite no repositório público.
+
+Veja o [GitHub Actions](https://github.com/japaguimarassi-create/AdminHubV4/actions) para estado de compilação e artefatos.
 
 ## Referências oficiais
 
-- [Diretrizes de design para apps móveis Android](https://developer.android.com/design/ui/mobile)
-- [Acessar e editar documentos pelo Storage Access Framework](https://developer.android.com/training/data-storage/shared/documents-files)
-- [Tipos de serviços em primeiro plano](https://developer.android.com/develop/background-work/services/fgs/service-types)
-- [Mudanças de comportamento do Android 16](https://developer.android.com/about/versions/16/behavior-changes-16)
-- [Requisitos de API de destino do Google Play](https://support.google.com/googleplay/android-developer/answer/11926878?hl=pt)
+- [RoleManager — papel do assistente e consentimento](https://developer.android.com/reference/android/app/role/RoleManager)
+- [VoiceInteractionService — serviço de assistente global](https://developer.android.com/reference/android/service/voice/VoiceInteractionService)
+- [VoiceInteractionSession — interface do assistente](https://developer.android.com/reference/android/service/voice/VoiceInteractionSession)
+- [SpeechRecognizer — reconhecimento local no dispositivo](https://developer.android.com/reference/android/speech/SpeechRecognizer)
+- [Storage Access Framework](https://developer.android.com/training/data-storage/shared/documents-files)
