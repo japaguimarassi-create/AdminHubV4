@@ -29,7 +29,7 @@ object LocalAutomationEngine {
     private const val KEY_LAST_TIME = "last_run_elapsed"
     private const val KEY_STATUS = "last_status"
 
-    fun saveInstruction(context: Context, raw: String): String {
+    fun saveInstruction(context: Context, raw: String, ignoreCurrentPackage: Boolean = true): String {
         val parsed = parse(raw) ?: run {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putBoolean(KEY_ACTIVE, false)
@@ -44,7 +44,7 @@ object LocalAutomationEngine {
             .putString(KEY_RAW, parsed.original)
             .putString(KEY_TARGET, parsed.targetApp ?: "*")
             .putBoolean(KEY_ACTIVE, true)
-            .putString(KEY_ARMED_IGNORE, currentPackage)
+            .putString(KEY_ARMED_IGNORE, if (ignoreCurrentPackage) currentPackage else "")
             .putString(KEY_LAST_PACKAGE, "")
             .putLong(KEY_LAST_TIME, 0L)
             .putString(KEY_STATUS, "Instrução salva. Aguardando: $targetDescription")
