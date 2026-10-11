@@ -55,7 +55,7 @@ jobs:
           grep -q "SUPABASE_PUBLISHABLE_KEY" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           test -s supabase/functions/jarvis-auth/index.ts
           test -s supabase/migrations/20261011000000_jarvis_global_owner.sql
-          grep -q 'versionName = "11.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "12.0.0"' app/build.gradle.kts
           grep -q 'android:name=".LoginActivity"' app/src/main/AndroidManifest.xml
           grep -q 'android:name=".JarvisVoiceInteractionService"' app/src/main/AndroidManifest.xml
           ! grep -q 'QUERY_ALL_PACKAGES' app/src/main/AndroidManifest.xml
