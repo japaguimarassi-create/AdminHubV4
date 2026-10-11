@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Neural HUD</string>
+    <string name="accessibility_description">Classifica localmente sinais da interface visível, quando ativado pelo usuário. Não transmite textos da tela.</string>
+</resources>
