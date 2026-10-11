@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Neural HUD emblem</title>
+  <desc id="desc">A luminous neural compass orbiting a geometric N, in cyan and ice white on a midnight-blue field.</desc>
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#102B42"/>
+      <stop offset="1" stop-color="#07101D"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A5FFFF"/>
+      <stop offset=".55" stop-color="#35DDEB"/>
+      <stop offset="1" stop-color="#1688C8"/>
+    </linearGradient>
+    <radialGradient id="core" cx=".5" cy=".45" r=".7">
+      <stop offset="0" stop-color="#173D54"/>
+      <stop offset="1" stop-color="#091422"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="118" fill="url(#field)"/>
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#24445E" stroke-width="7"/>
+  <circle cx="256" cy="256" r="164" fill="none" stroke="#14364E" stroke-width="3" stroke-dasharray="5 16"/>
+  <g fill="none" stroke="url(#signal)" stroke-linecap="round" filter="url(#glow)">
+    <ellipse cx="256" cy="256" rx="151" ry="78" transform="rotate(-34 256 256)" stroke-width="9"/>
+    <ellipse cx="256" cy="256" rx="151" ry="78" transform="rotate(34 256 256)" stroke-width="7" opacity=".82"/>
+    <path d="M145 151 204 204 256 256 307 204 367 151" stroke-width="6"/>
+    <path d="M145 361 204 308 256 256 307 308 367 361" stroke-width="6"/>
+  </g>
+  <circle cx="256" cy="256" r="92" fill="url(#core)" stroke="#35DDEB" stroke-width="5"/>
+  <circle cx="256" cy="256" r="80" fill="none" stroke="#214C66" stroke-width="2"/>
+  <path d="M202 322V190h24l60 82v-82h24v132h-24l-60-82v82z" fill="#E8FFFF"/>
+  <path d="M226 190h-24v132h24" fill="none" stroke="#35DDEB" stroke-width="4" opacity=".9"/>
+  <g fill="#A5FFFF" stroke="#07101D" stroke-width="7">
+    <circle cx="145" cy="151" r="15"/>
+    <circle cx="367" cy="151" r="15"/>
+    <circle cx="145" cy="361" r="15"/>
+    <circle cx="367" cy="361" r="15"/>
+  </g>
+  <g fill="url(#signal)" stroke="#07101D" stroke-width="6">
+    <circle cx="256" cy="61" r="12"/>
+    <circle cx="451" cy="256" r="12"/>
+    <circle cx="256" cy="451" r="12"/>
+    <circle cx="61" cy="256" r="12"/>
+  </g>
+  <circle cx="256" cy="256" r="10" fill="#A5FFFF" filter="url(#glow)"/>
+</svg>
