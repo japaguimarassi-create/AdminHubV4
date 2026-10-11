@@ -98,8 +98,11 @@ object LocalAutomationEngine {
             return LocalAction(LocalActionType.SCROLL_UP)
         }
         if (normalized == "aguarde" || normalized == "espere") return LocalAction(LocalActionType.WAIT, "600")
-        Regex("^(?:aguarde|espere)\\s+(\\d{1,3})\\s*(?:ms|milissegundos)?$").matchEntire(normalized)?.let {
-            return LocalAction(LocalActionType.WAIT, it.groupValues[1].toInt().coerceIn(100, 3000).toString())
+        Regex("^(?:aguarde|espere|pause|pausar)\\s+(\\d{1,3})\\s*(ms|milissegundos|milissegundo|s|segundos|segundo)?$").matchEntire(normalized)?.let {
+            val amount = it.groupValues[1].toIntOrNull() ?: 1
+            val unit = it.groupValues[2]
+            val millis = if (unit == "s" || unit.startsWith("segundo")) amount * 1000 else amount
+            return LocalAction(LocalActionType.WAIT, millis.coerceIn(100, 3000).toString())
         }
         Regex("^(?:pesquise|pesquisar|pesquisa|procure|procurar|procura|busque|buscar|busca|encontre|encontrar|search|google)\\s+(?:por\\s+)?(.+)$", RegexOption.IGNORE_CASE)
             .find(text)?.let { return LocalAction(LocalActionType.SEARCH, cleanArgument(it.groupValues[1])) }
