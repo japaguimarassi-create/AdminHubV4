@@ -75,4 +75,28 @@ class LocalAutomationEngineTest {
         assertEquals(2678, JarvisLocalBrain.HIDDEN_NEURONS)
     }
 
+    @Test
+    fun parsesOpenAppWithMultipleFollowUpActions() {
+        val result = LocalAutomationEngine.parse(
+            "abra Chrome e depois pesquise gatos e depois toque em primeiro resultado"
+        )
+        assertNotNull(result)
+        assertEquals(
+            listOf(
+                LocalAction(LocalActionType.OPEN_APP, "Chrome"),
+                LocalAction(LocalActionType.SEARCH, "gatos"),
+                LocalAction(LocalActionType.CLICK_TEXT, "primeiro resultado")
+            ),
+            result!!.actions
+        )
+    }
+
+    @Test
+    fun recognizesAppActionAndWaitAsAPlan() {
+        val result = LocalAutomationEngine.parse("abrir YouTube e depois aguarde 2 segundos")
+        assertNotNull(result)
+        assertEquals(LocalActionType.OPEN_APP, result!!.actions.first().type)
+        assertEquals(LocalAction(LocalActionType.WAIT, "2000"), result.actions.last())
+    }
+
 }
