@@ -270,6 +270,14 @@ class HudOverlayService : Service() {
                 Toast.makeText(this, "Abra Configurações > Acessibilidade manualmente.", Toast.LENGTH_LONG).show()
             }
         }
+        panelButton(controls, "Ferramentas: arquivos, apps e pesquisa") {
+            removePanel()
+            try {
+                startActivity(Intent(this, ToolboxActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } catch (_: Exception) {
+                Toast.makeText(this, "Não foi possível abrir as ferramentas.", Toast.LENGTH_SHORT).show()
+            }
+        }
         panelButton(controls, "Pausar automação") {
             LocalAutomationEngine.clear(this)
             refreshStatus("Automação pausada.")
