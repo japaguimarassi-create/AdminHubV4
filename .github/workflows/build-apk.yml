@@ -38,26 +38,74 @@ jobs:
           test -s app/src/main/java/com/neuralhud/mobile/LocalAutomationEngine.kt
           test -s app/src/main/java/com/neuralhud/mobile/AppObserverService.kt
           test -s app/src/main/java/com/neuralhud/mobile/ToolboxActivity.kt
+          test -s app/src/main/java/com/neuralhud/mobile/TextFileEditorActivity.kt
           test -s app/src/main/res/drawable/ic_neural_hud_foreground.xml
           test -s app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           test -s app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          grep -q 'TextFileEditorActivity' app/src/main/AndroidManifest.xml
           grep -q 'android:icon="@mipmap/ic_launcher"' app/src/main/AndroidManifest.xml
-          grep -q 'ToolboxActivity' app/src/main/AndroidManifest.xml
-          grep -q 'versionName = "2.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "3.0.0"' app/build.gradle.kts
+          ! grep -q 'QUERY_ALL_PACKAGES' app/src/main/AndroidManifest.xml
+
+      - name: Prepare release signing key
+        env:
+          NEURALHUD_KEYSTORE_BASE64: ${{ secrets.NEURALHUD_KEYSTORE_BASE64 }}
+          NEURALHUD_KEYSTORE_PASSWORD: ${{ secrets.NEURALHUD_KEYSTORE_PASSWORD }}
+          NEURALHUD_KEY_ALIAS: ${{ secrets.NEURALHUD_KEY_ALIAS }}
+          NEURALHUD_KEY_PASSWORD: ${{ secrets.NEURALHUD_KEY_PASSWORD }}
+        run: |
+          if [ -n "${NEURALHUD_KEYSTORE_BASE64:-}" ] && [ -n "${NEURALHUD_KEYSTORE_PASSWORD:-}" ] && [ -n "${NEURALHUD_KEY_ALIAS:-}" ] && [ -n "${NEURALHUD_KEY_PASSWORD:-}" ]; then
+            printf '%s' "$NEURALHUD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/neuralhud-release.jks"
+            test -s "$RUNNER_TEMP/neuralhud-release.jks"
+            echo "HAS_RELEASE_SIGNING=true" >> "$GITHUB_ENV"
+            echo "A assinatura de release está configurada."
+          else
+            echo "HAS_RELEASE_SIGNING=false" >> "$GITHUB_ENV"
+            echo "Assinatura de release não configurada; será produzido apenas o APK de teste debug."
+          fi
 
       - name: Build debug APK
         run: gradle --no-daemon --stacktrace assembleDebug
 
-      - name: Verify APK
+      - name: Verify debug APK
         run: |
-          test -s app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | grep -q "package: name='com.neuralhud.mobile.debug'"
-          sha256sum app/build/outputs/apk/debug/app-debug.apk
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.neuralhud.mobile.debug'"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          sha256sum "$APK"
 
-      - name: Upload APK
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: neural-hud-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Build signed release APK
+        if: ${{ env.HAS_RELEASE_SIGNING == 'true' }}
+        env:
+          NEURALHUD_KEYSTORE_PATH: ${{ runner.temp }}/neuralhud-release.jks
+          NEURALHUD_KEYSTORE_PASSWORD: ${{ secrets.NEURALHUD_KEYSTORE_PASSWORD }}
+          NEURALHUD_KEY_ALIAS: ${{ secrets.NEURALHUD_KEY_ALIAS }}
+          NEURALHUD_KEY_PASSWORD: ${{ secrets.NEURALHUD_KEY_PASSWORD }}
+        run: gradle --no-daemon --stacktrace assembleRelease
+
+      - name: Verify signed release APK
+        if: ${{ env.HAS_RELEASE_SIGNING == 'true' }}
+        run: |
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.neuralhud.mobile'"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
+          sha256sum "$APK"
+
+      - name: Upload signed release APK
+        if: ${{ env.HAS_RELEASE_SIGNING == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: neural-hud-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
