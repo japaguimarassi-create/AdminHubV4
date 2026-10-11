@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 class AppObserverService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var activeTargetPackage = ""
+    private var jarvisReceiverRegistered = false
 
     private val jarvisReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -331,6 +332,7 @@ class AppObserverService : AccessibilityService() {
     }
 
     private fun registerJarvisReceiver() {
+        if (jarvisReceiverRegistered) return
         val filter = IntentFilter().apply {
             addAction(ACTION_EXECUTE_NOW)
             addAction(ACTION_GLOBAL_COMMAND)
@@ -340,6 +342,7 @@ class AppObserverService : AccessibilityService() {
             @Suppress("DEPRECATION")
             registerReceiver(jarvisReceiver, filter)
         }
+        jarvisReceiverRegistered = true
     }
 
     override fun onInterrupt() {
@@ -348,7 +351,10 @@ class AppObserverService : AccessibilityService() {
     }
 
     override fun onDestroy() {
-        try { unregisterReceiver(jarvisReceiver) } catch (_: Exception) {}
+        if (jarvisReceiverRegistered) {
+            try { unregisterReceiver(jarvisReceiver) } catch (_: Exception) {}
+            jarvisReceiverRegistered = false
+        }
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
