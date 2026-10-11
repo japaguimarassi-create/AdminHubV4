@@ -87,6 +87,7 @@ class MainActivity : Activity() {
             setPadding(0, dp(20), 0, 0)
         }, matchWrap())
 
+        SystemBarInsets.apply(page)
         setContentView(page)
     }
 
