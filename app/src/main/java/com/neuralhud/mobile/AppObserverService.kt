@@ -26,13 +26,13 @@ class AppObserverService : AccessibilityService() {
         val packageName = event.packageName?.toString().orEmpty()
         if (packageName.isBlank() || packageName == this.packageName || isSystemOrLauncher(packageName)) return
 
+        activeTargetPackage = packageName
         getSharedPreferences("neural_hud_observer", MODE_PRIVATE).edit()
             .putString("last_package", packageName)
             .putLong("last_observed_at", System.currentTimeMillis())
             .apply()
 
         val instruction = LocalAutomationEngine.onAppOpened(this, packageName) ?: return
-        activeTargetPackage = packageName
         LocalAutomationEngine.setStatus(this, "Detectei o app $packageName. Interpretando a instrução local…")
         handler.postDelayed({
             if (activeTargetPackage == packageName) executeStep(instruction, packageName, 0)
@@ -54,6 +54,10 @@ class AppObserverService : AccessibilityService() {
     }
 
     private fun executeStep(instruction: ParsedInstruction, packageName: String, index: Int) {
+        if (activeTargetPackage != packageName) {
+            LocalAutomationEngine.setStatus(this, "Automação interrompida porque você mudou de aplicativo.")
+            return
+        }
         if (index >= instruction.actions.size) {
             LocalAutomationEngine.setStatus(this, "Concluído em $packageName: ${instruction.actionText}")
             return
