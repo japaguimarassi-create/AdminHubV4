@@ -48,9 +48,18 @@ jobs:
           test -s app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           grep -q 'TextFileEditorActivity' app/src/main/AndroidManifest.xml
           grep -q 'android:icon="@mipmap/ic_launcher"' app/src/main/AndroidManifest.xml
-          grep -q 'versionName = "4.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "5.0.0"' app/build.gradle.kts
           grep -q 'targetSdk = 36' app/build.gradle.kts
           test -s app/src/main/java/com/neuralhud/mobile/SystemBarInsets.kt
+          test -s app/src/main/java/com/neuralhud/mobile/JarvisCommandRouter.kt
+          test -s app/src/main/java/com/neuralhud/mobile/JarvisLocalBrain.kt
+          test -s app/src/main/java/com/neuralhud/mobile/JarvisMemory.kt
+          test -s app/src/main/java/com/neuralhud/mobile/JarvisVoiceInteractionService.kt
+          test -s app/src/main/java/com/neuralhud/mobile/JarvisVoiceInteractionSessionService.kt
+          test -s app/src/main/java/com/neuralhud/mobile/JarvisVoiceInteractionSession.kt
+          test -s app/src/main/res/xml/jarvis_voice_interaction.xml
+          grep -q 'android:name=".JarvisVoiceInteractionService"' app/src/main/AndroidManifest.xml
+          grep -q 'HIDDEN_NEURONS = 2678' app/src/main/java/com/neuralhud/mobile/JarvisLocalBrain.kt
           test ! -e app/src/main/java/com/neuralhud/mobile/LocalNeuralModel.kt
           ! grep -q 'QUERY_ALL_PACKAGES' app/src/main/AndroidManifest.xml
 
