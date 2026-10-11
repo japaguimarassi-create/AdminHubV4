@@ -1,4 +1,4 @@
-package com.neuralhud.mobile
+package com.jarvis.assistant
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -165,7 +165,7 @@ object LocalAutomationEngine {
         context.sendBroadcast(android.content.Intent(ACTION_STATUS).setPackage(context.packageName).putExtra("status", status))
     }
 
-    const val ACTION_STATUS = "com.neuralhud.mobile.AUTOMATION_STATUS"
+    const val ACTION_STATUS = "com.jarvis.assistant.AUTOMATION_STATUS"
 
     fun getStatus(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
