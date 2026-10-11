@@ -1,4 +1,4 @@
-package com.neuralhud.mobile
+package com.jarvis.assistant
 
 import android.app.Notification
 import android.app.NotificationChannel
