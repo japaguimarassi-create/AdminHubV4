@@ -30,6 +30,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".JarvisWebActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ToolboxActivity"
             android:exported="false" />
 
@@ -78,7 +82,7 @@
             android:name=".AppObserverService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true"
-            android:label="Neural HUD — leitura de interface">
+            android:label="J.A.R.V.I.S. — automação opcional">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
