@@ -54,6 +54,9 @@ jobs:
           test ! -e app/src/main/java/com/neuralhud/mobile/LocalNeuralModel.kt
           ! grep -q 'QUERY_ALL_PACKAGES' app/src/main/AndroidManifest.xml
 
+      - name: Run local parser tests
+        run: gradle --no-daemon --stacktrace testDebugUnitTest
+
       - name: Prepare release signing key
         env:
           NEURALHUD_KEYSTORE_BASE64: ${{ secrets.NEURALHUD_KEYSTORE_BASE64 }}
