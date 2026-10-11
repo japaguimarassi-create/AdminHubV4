@@ -19,7 +19,6 @@ import android.content.pm.PackageManager
 import android.content.pm.ApplicationInfo
 import android.util.TypedValue
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipInputStream
@@ -28,10 +27,6 @@ class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var query: EditText
     private lateinit var model: LocalNeuralModel
-
-    private val filePicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) inspectFile(uri)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,7 +84,15 @@ class MainActivity : Activity() {
             status.text = "Ative 'Neural HUD — leitura de interface' somente se quiser usar a classificação de interface."
         }
         button(page, "Listar apps instalados permitidos pelo Android") { showInstalledApps() }
-        button(page, "Selecionar arquivo para inspeção") { filePicker.launch(arrayOf("*/*")) }
+        button(page, "Selecionar arquivo para inspeção") {
+            val picker = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            @Suppress("DEPRECATION")
+            startActivityForResult(picker, REQUEST_PICK_FILE)
+        }
 
         val searchLabel = TextView(this).apply {
             text = "Pesquisa Google (abre o navegador; não usa API)"
@@ -142,6 +145,14 @@ class MainActivity : Activity() {
         button(page, "Parar leitura e esquecer última categoria observada") {
             getSharedPreferences("neural_hud_observer", MODE_PRIVATE).edit().clear().apply()
             status.text = "Categorias locais observadas foram removidas."
+        }
+    }
+
+    @Deprecated("Uses the platform document picker for broad Android compatibility")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_PICK_FILE && resultCode == RESULT_OK) {
+            data?.data?.let { inspectFile(it) }
         }
     }
 
@@ -233,6 +244,10 @@ class MainActivity : Activity() {
         val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         params.topMargin = dp(6)
         parent.addView(button, params)
+    }
+
+    companion object {
+        private const val REQUEST_PICK_FILE = 5401
     }
 
     private fun matchWrap() = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
