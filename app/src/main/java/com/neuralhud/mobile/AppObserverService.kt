@@ -1,4 +1,4 @@
-package com.neuralhud.mobile
+package com.jarvis.assistant
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
@@ -406,8 +406,8 @@ class AppObserverService : AccessibilityService() {
     }
 
     companion object {
-        const val ACTION_EXECUTE_NOW = "com.neuralhud.mobile.JARVIS_EXECUTE_NOW"
-        const val ACTION_GLOBAL_COMMAND = "com.neuralhud.mobile.JARVIS_GLOBAL_COMMAND"
+        const val ACTION_EXECUTE_NOW = "com.jarvis.assistant.JARVIS_EXECUTE_NOW"
+        const val ACTION_GLOBAL_COMMAND = "com.jarvis.assistant.JARVIS_GLOBAL_COMMAND"
         const val EXTRA_INSTRUCTION = "instruction"
         const val EXTRA_GLOBAL_ACTION = "global_action"
     }
