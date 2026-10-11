@@ -9,6 +9,7 @@ Android personal assistant with login-first UI, local conversation history, a vo
 - Project ref: `hgcjnkxpsnrjrofvwrzp`
 - Project URL: `https://hgcjnkxpsnrjrofvwrzp.supabase.co`
 - Edge Function deployed: `jarvis-auth` at `https://hgcjnkxpsnrjrofvwrzp.supabase.co/functions/v1/jarvis-auth`
+- The app sends the Supabase publishable key only in the `apikey` request header. That key is designed for client-side use; the service-role key is never built into the APK.
 - Database migration applied: profile table, single global-owner row, atomic first-owner claim, and permissions that block direct access by public/anonymous roles.
 - The function validates the Google ID token's signature, issuer, audience, expiration and nonce before recording a user. It has custom token validation, so Supabase gateway JWT verification is disabled for this function; requests still need a valid Google ID token and matching nonce.
 

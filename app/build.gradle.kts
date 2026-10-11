@@ -12,6 +12,7 @@ val releaseKeyAlias = System.getenv("JARVIS_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("JARVIS_KEY_PASSWORD")
 val googleWebClientId = System.getenv("JARVIS_GOOGLE_WEB_CLIENT_ID").orEmpty()
 val jarvisAuthEndpoint = System.getenv("JARVIS_AUTH_ENDPOINT").orEmpty()
+val supabasePublishableKey = System.getenv("JARVIS_SUPABASE_PUBLISHABLE_KEY").orEmpty()
 val canSignRelease = listOf(
     releaseStorePath,
     releaseStorePassword,
@@ -30,6 +31,7 @@ android {
         versionName = "9.0.0"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", quotedBuildConfig(googleWebClientId))
         buildConfigField("String", "JARVIS_AUTH_ENDPOINT", quotedBuildConfig(jarvisAuthEndpoint))
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", quotedBuildConfig(supabasePublishableKey))
     }
     buildFeatures { buildConfig = true }
     compileOptions {

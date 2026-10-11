@@ -18,8 +18,12 @@ object JarvisAuthRepository {
     suspend fun signInWithGoogle(activity: Activity): JarvisAccount {
         val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID.trim()
         val endpoint = BuildConfig.JARVIS_AUTH_ENDPOINT.trim()
+        val publishableKey = BuildConfig.SUPABASE_PUBLISHABLE_KEY.trim()
         require(clientId.isNotBlank()) {
             "O login Google ainda não foi conectado ao projeto OAuth. Configure JARVIS_GOOGLE_WEB_CLIENT_ID no GitHub."
+        }
+        require(publishableKey.startsWith("sb_publishable_") || publishableKey.isNotBlank()) {
+            "A chave pública do projeto Supabase não foi configurada neste build."
         }
         require(endpoint.startsWith("https://")) {
             "O backend global ainda não foi configurado. Configure JARVIS_AUTH_ENDPOINT depois de publicar a função segura do J.A.R.V.I.S."
@@ -70,6 +74,7 @@ object JarvisAuthRepository {
             connectTimeout = 12000
             readTimeout = 12000
             doOutput = true
+            setRequestProperty("apikey", publishableKey)
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             setRequestProperty("Accept", "application/json")
         }
