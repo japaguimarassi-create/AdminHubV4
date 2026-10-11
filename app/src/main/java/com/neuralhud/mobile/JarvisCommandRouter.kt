@@ -25,11 +25,23 @@ object JarvisCommandRouter {
     private val searchPattern = Regex("(?i)^(?:pesquise na internet|pesquisar na internet|pesquise|pesquisar|procure|procurar|busque|buscar|pesquisa|busca|encontre|search|google)\\s+(.+)$")
     private val targetSearchPattern = Regex("(?i)^(?:pesquise|pesquisar|procure|procurar|busque|buscar|pesquisa|busca|search)\\s+(.+?)\\s+(?:no|na|em|dentro do|dentro da)\\s+([a-z0-9][a-z0-9 ._+-]+)$")
 
-    fun execute(context: Context, rawText: String): String {
+    fun execute(context: Context, rawText: String): String = executeInternal(context, rawText, 0)
+
+    private fun executeInternal(context: Context, rawText: String, depth: Int): String {
         val appContext = context.applicationContext
         val raw = rawText.trim()
         if (raw.isEmpty()) return "Digite ou fale um comando."
         val normalized = normalize(raw)
+
+        if (depth == 0) {
+            JarvisMemory.teach(appContext, raw)?.let { return it }
+        }
+        if (depth < 4) {
+            val learned = JarvisMemory.resolve(appContext, raw)
+            if (learned != null && normalize(learned) != normalized) {
+                return executeInternal(appContext, learned, depth + 1)
+            }
+        }
 
         if (Regex("^(?:ajuda|help|comandos|o que voce sabe fazer|quais sao suas funcoes)$").matches(normalized)) {
             return helpText()
