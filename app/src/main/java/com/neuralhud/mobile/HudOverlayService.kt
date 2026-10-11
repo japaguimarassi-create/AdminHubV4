@@ -404,11 +404,11 @@ class HudOverlayService : Service() {
         val screenHeight = resources.displayMetrics.heightPixels
         val margin = dp(10)
         val bubbleRight = bubbleParams.x + bubbleParams.width
-        params.x = if (bubbleRight + params.width + margin <= screenWidth) {
+        params.x = (if (bubbleRight + params.width + margin <= screenWidth) {
             bubbleRight + margin
         } else {
             bubbleParams.x - params.width - margin
-        }.coerceIn(0, (screenWidth - params.width).coerceAtLeast(0))
+        }).coerceIn(0, (screenWidth - params.width).coerceAtLeast(0))
         params.y = bubbleParams.y.coerceIn(0, (screenHeight - params.height - dp(16)).coerceAtLeast(0))
         try {
             if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
