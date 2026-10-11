@@ -55,6 +55,32 @@ object JarvisCommandRouter {
             return LocalAutomationEngine.saveInstruction(appContext, raw, false)
         }
 
+
+        val appSequence = JarvisAppSequenceParser.parse(raw, launchableAppLabels(appContext))
+        if (appSequence != null) {
+            val target = findLaunchableApp(appContext, appSequence.appLabel)
+                ?: return "Identifiquei a instrução para abrir “" + appSequence.appLabel + "”, mas o Android não listou esse app como lançável."
+            val plannedText = "Quando abrir " + target.label + ", " + appSequence.followUp
+            val followUpPlan = LocalAutomationEngine.parse(plannedText)
+            if (followUpPlan == null) {
+                val opened = launchApp(appContext, target.label)
+                return if (opened) {
+                    "Encontrei e abri " + target.label + ". Não reconheci a instrução adicional “" + appSequence.followUp + "”, então não executei essa parte."
+                } else {
+                    "Encontrei " + target.label + ", mas o Android não permitiu abri-lo. A instrução adicional não foi executada."
+                }
+            }
+            if (!isAccessibilityEnabled(appContext)) {
+                return "Encontrei " + target.label + ". Para executar “" + appSequence.followUp + "” dentro dele, ative J.A.R.V.I.S. em Acessibilidade. Ainda não executei a instrução."
+            }
+            val saved = LocalAutomationEngine.saveInstruction(appContext, plannedText, false, true)
+            if (launchApp(appContext, target.label)) {
+                return "Encontrei " + target.label + " e abri o app. A sequência suportada foi preparada. " + saved
+            }
+            LocalAutomationEngine.clear(appContext)
+            return "Encontrei " + target.label + ", mas o Android não permitiu abri-lo. A sequência foi cancelada."
+        }
+
         val targetSearch = targetSearchPattern.matchEntire(raw)
         if (targetSearch != null) {
             val query = targetSearch.groupValues[1].trim()
@@ -365,6 +391,23 @@ object JarvisCommandRouter {
 
     private data class LaunchTarget(val label: String, val packageName: String)
 
+
+    private fun launchableAppLabels(context: Context): List<String> {
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        return try {
+            @Suppress("DEPRECATION")
+            context.packageManager.queryIntentActivities(launcher, PackageManager.MATCH_DEFAULT_ONLY)
+                .asSequence()
+                .filter { it.activityInfo.packageName != context.packageName }
+                .map { it.loadLabel(context.packageManager).toString() }
+                .filter { it.isNotBlank() }
+                .distinctBy { normalize(it) }
+                .toList()
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     private fun findLaunchableApp(context: Context, requested: String): LaunchTarget? {
         var target = normalize(cleanAppName(requested))
         if (target.isBlank()) return null
@@ -529,7 +572,7 @@ object JarvisCommandRouter {
             .trim()
 
     private fun helpText(): String =
-        "J.A.R.V.I.S. local: abrir apps/sites, pesquisar, calcular, hora/data, volume/mídia, Configurações, voltar/início/notificações, captura de tela, notas, automação e até 100 macros aprendidas. Ensine uma macro com: ensine frase => ação. O classificador tem 2.678 unidades ocultas, mas não é um LLM. Voz usa reconhecimento offline quando instalado; pedidos desconhecidos abrem uma pesquisa no navegador. Nenhuma API de IA é chamada."
+        "J.A.R.V.I.S. local: abrir apps/sites, pesquisar, calcular, hora/data, volume/mídia, Configurações, voltar/início/notificações, captura de tela, notas, automação e até 100 macros aprendidas. Ensine uma macro com: ensine frase => ação. O classificador tem 2.678 unidades ocultas, mas não é um LLM. Voz usa reconhecimento offline quando instalado; pedidos desconhecidos pedem reformulação em vez de executar ações. Nenhuma API de IA é chamada."
 
     private class MathParser(private val source: String) {
         private var index = 0

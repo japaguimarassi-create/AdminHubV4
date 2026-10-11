@@ -20,7 +20,7 @@ data class ParsedInstruction(
 )
 
 object LocalAutomationEngine {
-    private const val PREFS = "neural_hud_automation"
+    private const val PREFS = "jarvis_automation"
     private const val KEY_RAW = "raw_instruction"
     private const val KEY_TARGET = "target_app"
     private const val KEY_ACTIVE = "active"
@@ -39,7 +39,7 @@ object LocalAutomationEngine {
                 .apply()
             return "Não entendi a instrução. Exemplos: “Quando abrir YouTube, pesquise gatos” ou “digite Olá”."
         }
-        val observerPrefs = context.getSharedPreferences("neural_hud_observer", Context.MODE_PRIVATE)
+        val observerPrefs = context.getSharedPreferences("jarvis_observer", Context.MODE_PRIVATE)
         val currentPackage = observerPrefs.getString("last_package", "") ?: ""
         val targetDescription = parsed.targetApp ?: "próximo aplicativo aberto"
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
