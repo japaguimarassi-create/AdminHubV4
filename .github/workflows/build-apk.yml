@@ -120,7 +120,7 @@ jobs:
           SHA1="$(printf '%s' "$CERT_INFO" | sed -n 's/.*SHA-1 digest: //p' | head -n 1)"
           SHA256="$(printf '%s' "$CERT_INFO" | sed -n 's/.*SHA-256 digest: //p' | head -n 1)"
           PACKAGE="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | sed -n "s/^package: name='\([^']*\)'.*/\1/p" | head -n 1)"
-          if [ "$JARVIS_STABLE_SIGNING" = "true" ]; then EXPECTED_PACKAGE="com.jarvis.assistant.debug"; else EXPECTED_PACKAGE="com.jarvis.assistant.debug"; fi
+          EXPECTED_PACKAGE="com.jarvis.assistant.debug"
           test "$PACKAGE" = "$EXPECTED_PACKAGE"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
           sha256sum "$APK"
@@ -141,7 +141,7 @@ jobs:
             if [ "$JARVIS_STABLE_SIGNING" = "true" ]; then
               echo "Register this exact package and SHA-1 as an Android OAuth client in the same Google Cloud project as the Web client."
             else
-              echo "**Intermediate CI signature only.** This artifact is re-signed with the stable private key before delivery.
+              echo "**Intermediate CI signature only.** This artifact is re-signed with the stable private key before delivery."
               echo "- Intended package: \`com.jarvis.assistant.debug\`"
               echo "- Intended stable signing SHA-1: \`5B:2E:28:1B:18:5E:4E:FA:50:0F:C7:18:89:5D:1B:7F:B0:71:20:38\`"
               echo "Configure \`JARVIS_DEBUG_SIGNING_BUNDLE_B64\` once to make future CI artifacts use the stable signing key."
