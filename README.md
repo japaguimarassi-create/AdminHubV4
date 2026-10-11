@@ -1,5 +1,8 @@
 # Neural HUD 2.0
 
+<p align="center"><img src="assets/neural-hud-emblem.svg" alt="Neural HUD custom neural-orbit emblem" width="180" /></p>
+
+
 Neural HUD é um HUD flutuante Android com um interpretador local de instruções. Não usa API de IA: os comandos, sinônimos, regras de acionamento e ações compatíveis já estão implementados no código; as instruções do usuário são guardadas localmente.
 
 ## Como funciona
