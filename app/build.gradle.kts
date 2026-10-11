@@ -26,8 +26,8 @@ android {
         applicationId = "com.jarvis.assistant"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "8.0.0"
+        versionCode = 9
+        versionName = "9.0.0"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", quotedBuildConfig(googleWebClientId))
         buildConfigField("String", "JARVIS_AUTH_ENDPOINT", quotedBuildConfig(jarvisAuthEndpoint))
     }
@@ -52,7 +52,7 @@ android {
             if (canSignRelease) signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            applicationIdSuffix = ".debug8"
+            applicationIdSuffix = ".debug9"
             versionNameSuffix = "-debug"
         }
     }

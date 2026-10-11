@@ -99,10 +99,13 @@ class LoginActivity : Activity() {
         }
         card.addView(googleButton, matchWrap())
         status = TextView(this).apply {
-            text = if (BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank() || BuildConfig.JARVIS_AUTH_ENDPOINT.isBlank()) {
-                "Login aguardando configuração: OAuth Google e backend ainda não foram conectados a este build."
-            } else {
-                "Login Google e verificação global disponíveis."
+            text = when {
+                BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank() ->
+                    "Backend Supabase criado. Falta o Web Client ID do Google: configure JARVIS_GOOGLE_WEB_CLIENT_ID no GitHub e GOOGLE_WEB_CLIENT_ID nos segredos do Supabase."
+                BuildConfig.JARVIS_AUTH_ENDPOINT.isBlank() ->
+                    "Falta configurar o endpoint de autenticação do backend neste build."
+                else ->
+                    "Backend conectado. O login Google está configurado; a primeira conta confirmada pelo servidor poderá ser o proprietário global."
             }
             textSize = 12f
             setTextColor(Color.rgb(152, 177, 199))

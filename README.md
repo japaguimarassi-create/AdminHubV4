@@ -1,40 +1,48 @@
-# J.A.R.V.I.S. 8.0.0
+# J.A.R.V.I.S. 9.0.0
 
-Aplicativo Android com tela de login inicial, interface de conversa, histórico local, esfera de voz e integração como assistente do sistema. A lógica local usa classificação determinística e comandos Android; consultas Web são explícitas e executadas numa WebView interna.
+Android personal assistant with login-first UI, local conversation history, a voice orb, and Android global-assistant integration. Local commands use a deterministic interpreter; Web search is explicit and opens in an in-app WebView.
 
-## Reconstrução desta versão
+## Live backend provisioned
 
-- A primeira tela agora é o login. O botão Google usa Android Credential Manager e envia o token de identidade ao endpoint HTTPS configurado para validação real.
-- O backend Supabase de referência está em supabase/functions/jarvis-auth/index.ts. A migração supabase/migrations/20261011000000_jarvis_global_owner.sql define o primeiro proprietário com uma operação atômica no banco; o papel nunca é eleito por preferência local do aplicativo.
-- A UI principal tem conversas locais, histórico lateral e campo de mensagens estilo chat.
-- A invocação do assistente Android usa uma esfera azul/ciano/violeta na parte inferior. A animação pulsa uniformemente.
-- A transcrição da voz passa por classificação e confirmação antes da execução. Comandos ambíguos não são encaminhados automaticamente à Web nem disparam ações.
-- As conversas permanecem no dispositivo. Pesquisa Web abre dentro do aplicativo.
-- A acessibilidade permanece opcional e deve ser habilitada manualmente nas configurações do Android.
+- Supabase project: `JARVIS-Auth`
+- Region: `sa-east-1` (São Paulo)
+- Project ref: `hgcjnkxpsnrjrofvwrzp`
+- Project URL: `https://hgcjnkxpsnrjrofvwrzp.supabase.co`
+- Edge Function deployed: `jarvis-auth` at `https://hgcjnkxpsnrjrofvwrzp.supabase.co/functions/v1/jarvis-auth`
+- Database migration applied: profile table, single global-owner row, atomic first-owner claim, and permissions that block direct access by public/anonymous roles.
+- The function validates the Google ID token's signature, issuer, audience, expiration and nonce before recording a user. It has custom token validation, so Supabase gateway JWT verification is disabled for this function; requests still need a valid Google ID token and matching nonce.
 
-## Configurar login Google real
+## One remaining setup step: Google OAuth Client IDs
 
-Este repositório ainda não tem projeto Supabase provisionado nem cliente OAuth configurado. Sem esses recursos, o botão Google informa a pendência em vez de simular autenticação.
+The backend is active, but real Google sign-in is intentionally not marked ready until an OAuth client ID is configured. No fake login or client-side owner assignment is used.
 
-Para habilitar a autenticação global:
+1. Open Google Cloud Console: https://console.cloud.google.com/auth/clients and select or create a project.
+2. Configure the Google Auth Platform branding/audience/consent setup as required.
+3. Create a **Web application OAuth client**. That client ID is used by the Android Credential Manager flow as `serverClientId` and by the server to validate the token audience.
+4. Register an **Android OAuth client** for the exact APK being tested. Use the package name `com.jarvis.assistant.debug9` and the SHA-1 fingerprint printed in the successful GitHub Actions run's `Verify APK package and signature` step. Debug APKs signed by the hosted CI may use a different certificate on a future build; a production app should use a stable signing key.
+5. In GitHub, open **Settings → Secrets and variables → Actions → Variables** and add `JARVIS_GOOGLE_WEB_CLIENT_ID` with the Web client ID.
+6. In Supabase, open **Edge Functions → Secrets** for this project and add `GOOGLE_WEB_CLIENT_ID` with the same Web client ID. Supabase injects its own `SUPABASE_URL` and service-role variables; never expose a service-role key in the APK or GitHub source.
+7. Re-run the GitHub Actions workflow to build an APK with the client ID.
 
-1. Configure um projeto Supabase e aplique o SQL da pasta supabase/migrations.
-2. Configure os segredos da função Edge: GOOGLE_WEB_CLIENT_ID, SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY. Nunca compile a service role key no APK.
-3. Publique supabase/functions/jarvis-auth.
-4. Crie um OAuth Client ID da Web no Google Auth Platform e configure o cliente Android com package name e fingerprint do certificado de assinatura que será usado.
-5. Nas variáveis do GitHub Actions, defina JARVIS_GOOGLE_WEB_CLIENT_ID e JARVIS_AUTH_ENDPOINT (URL HTTPS de /functions/v1/jarvis-auth) antes de gerar o APK final.
-6. Use assinatura estável para builds que precisem funcionar com o cliente Android do Google. Um APK debug assinado por uma chave efêmera do runner não é adequado para uma configuração OAuth Android permanente.
+Supabase function secrets guide: https://supabase.com/docs/guides/functions/secrets
+Android Credential Manager guide: https://developer.android.com/identity/sign-in/credential-manager-siwg-implementation
 
-A função valida assinatura, emissor, audiência, expiração e nonce do token Google no servidor. A regra do primeiro proprietário é garantida por uma linha singleton e inserção atômica no PostgreSQL. O modo local não cria proprietário global.
+## Global owner
 
-## Comandos e confiabilidade
+The first successfully verified Google account to complete sign-in after the OAuth configuration is live will claim the global owner row. The SQL uses a singleton table and atomic insert, so two first-login requests cannot both become owner. Log in with the intended owner account first. Local mode never becomes global owner.
 
-A voz offline depende de microfone permitido e do modelo Português (Brasil) instalado no reconhecedor do Android. Quando a transcrição tem baixa confiança, o app pede repetição. Caso o comando reconhecido seja válido, ele fica pendente até confirmação por voz ("confirmar") ou pelo botão. "Cancelar" descarta-o.
+The database tables have RLS enabled and no policies for public/anonymous access by design. The Edge Function's privileged server key is used only on the server.
 
-O classificador local e o parser não são um LLM generativo. Eles reconhecem um conjunto de comandos e perguntas; frases fora desse conjunto recebem solicitação de reformulação em vez de executar uma ação aleatória. A pesquisa Web é explícita.
+## Assistant reliability
 
-A automação entre aplicativos exige ativação manual de Acessibilidade e só pode operar controles que o Android exponha. Jogos baseados em canvas podem não expor elementos clicáveis. O projeto não injeta código em jogos nem garante ações automáticas universais.
+- The system-assistant voice flow shows the recognized command and asks for confirmation before execution.
+- Low-confidence voice transcripts require another attempt.
+- Unknown commands don't launch an arbitrary search or trigger a guessed action.
+- The app-name parser separates an installed app name from an extra instruction and reports unsupported actions honestly.
+- Cross-app automation requires the user to activate Android Accessibility manually and only works with controls exposed to the accessibility framework. Game automation is not universal.
 
-## Compilar
+The local intent classifier is not a generative LLM. Google login and global-owner assignment depend on the real OAuth/backend configuration described above.
 
-O GitHub Actions constrói o APK com pacote com.jarvis.assistant.debug8, executa testes unitários e valida a assinatura. O APK de depuração usa assinatura de teste do CI, não uma chave de distribuição permanente.
+## Build
+
+GitHub Actions runs unit tests, assembles the debug APK, verifies the package and signature and uploads `jarvis-android-v9-debug-apk`. The debug artifact is not a Play Store release signed with a permanent production key.
