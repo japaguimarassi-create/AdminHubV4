@@ -100,6 +100,7 @@ class ToolboxActivity : Activity() {
         body.addView(footer)
 
         addButton(page, "Voltar") { finish() }
+        SystemBarInsets.apply(page)
         setContentView(page)
     }
 
