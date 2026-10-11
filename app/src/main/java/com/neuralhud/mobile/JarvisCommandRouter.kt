@@ -61,8 +61,11 @@ object JarvisCommandRouter {
             val appName = targetSearch.groupValues[2].trim()
             val launchTarget = findLaunchableApp(appContext, appName)
             if (launchTarget != null && query.isNotBlank()) {
+                if (!isAccessibilityEnabled(appContext)) {
+                    return "Para pesquisar dentro de " + launchTarget.label + ", ative J.A.R.V.I.S. em Configurações > Acessibilidade e repita o comando."
+                }
                 val instruction = "Quando abrir ${launchTarget.label}, pesquise ${query}"
-                val saved = LocalAutomationEngine.saveInstruction(appContext, instruction, false)
+                val saved = LocalAutomationEngine.saveInstruction(appContext, instruction, false, true)
                 if (launchTarget.packageName != appContext.packageName && launchApp(appContext, launchTarget.label)) {
                     return "J.A.R.V.I.S.: abri ${launchTarget.label}. A pesquisa foi preparada localmente. $saved"
                 }
@@ -76,7 +79,10 @@ object JarvisCommandRouter {
             val query = multiApp.groupValues[2].trim()
             val target = findLaunchableApp(appContext, appName)
             if (target != null) {
-                val saved = LocalAutomationEngine.saveInstruction(appContext, "Quando abrir ${target.label}, pesquise $query", false)
+                if (!isAccessibilityEnabled(appContext)) {
+                    return "Para pesquisar dentro de " + target.label + ", ative J.A.R.V.I.S. em Configurações > Acessibilidade e repita o comando."
+                }
+                val saved = LocalAutomationEngine.saveInstruction(appContext, "Quando abrir ${target.label}, pesquise $query", false, true)
                 val launched = launchApp(appContext, target.label)
                 return if (launched) "J.A.R.V.I.S.: abrindo ${target.label}; pesquisa preparada. $saved"
                 else "A instrução ficou salva, mas não consegui abrir ${target.label}. $saved"
@@ -89,6 +95,9 @@ object JarvisCommandRouter {
             val appAction = planned.actions.first()
             val target = findLaunchableApp(appContext, appAction.argument)
                 ?: return "Não encontrei o app “" + appAction.argument + "”. Use o nome que aparece na tela inicial."
+            if (!isAccessibilityEnabled(appContext)) {
+                return "Consigo abrir " + target.label + ", mas o plano tem ações dentro do aplicativo. Ative J.A.R.V.I.S. em Configurações > Acessibilidade e repita o comando."
+            }
             val remainingActions = planned.actions.drop(1)
             val actionText = remainingActions.joinToString(" e depois ") { serializeAction(it) }
             val armed = LocalAutomationEngine.saveInstruction(
