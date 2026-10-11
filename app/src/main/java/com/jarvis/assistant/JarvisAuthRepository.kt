@@ -22,7 +22,7 @@ object JarvisAuthRepository {
         require(clientId.isNotBlank()) {
             "O login Google ainda não foi conectado ao projeto OAuth. Configure JARVIS_GOOGLE_WEB_CLIENT_ID no GitHub."
         }
-        require(publishableKey.startsWith("sb_publishable_") || publishableKey.isNotBlank()) {
+        require(publishableKey.startsWith("sb_publishable_")) {
             "A chave pública do projeto Supabase não foi configurada neste build."
         }
         require(endpoint.startsWith("https://")) {
@@ -54,7 +54,8 @@ object JarvisAuthRepository {
         val profile = validateTokenWithBackend(
             endpoint = endpoint,
             idToken = google.idToken,
-            nonce = nonce
+            nonce = nonce,
+            publishableKey = publishableKey
         )
         return JarvisAccount(
             email = profile.getString("email"),
@@ -67,7 +68,8 @@ object JarvisAuthRepository {
     private suspend fun validateTokenWithBackend(
         endpoint: String,
         idToken: String,
-        nonce: String
+        nonce: String,
+        publishableKey: String
     ): JSONObject = withContext(Dispatchers.IO) {
         val connection = (URL(endpoint).openConnection() as HttpsURLConnection).apply {
             requestMethod = "POST"
