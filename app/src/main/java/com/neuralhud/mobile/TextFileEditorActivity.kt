@@ -4,10 +4,12 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.text.InputType
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
@@ -25,7 +27,9 @@ class TextFileEditorActivity : Activity() {
     private lateinit var editor: EditText
     private lateinit var fileLabel: TextView
     private lateinit var preview: TextView
+    private lateinit var previewButton: Button
     private lateinit var status: TextView
+    private var previewExpanded = false
     private var currentUri: Uri? = null
     private var currentName = ""
     private var originalBytes = byteArrayOf()
@@ -38,8 +42,8 @@ class TextFileEditorActivity : Activity() {
 
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(16), dp(14), dp(14))
-            setBackgroundColor(Color.rgb(16, 24, 32))
+            setPadding(dp(16), dp(16), dp(16), dp(14))
+            setBackgroundColor(Color.rgb(13, 22, 33))
         }
         val scroll = ScrollView(this)
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -47,70 +51,79 @@ class TextFileEditorActivity : Activity() {
         page.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
         body.addView(TextView(this).apply {
-            text = "NEURAL HUD • EDITOR DE ARQUIVOS"
-            textSize = 20f
-            setTextColor(Color.rgb(77, 208, 225))
+            text = "EDITOR DE ARQUIVOS"
+            textSize = 22f
+            setTextColor(Color.rgb(91, 224, 238))
         })
         body.addView(TextView(this).apply {
-            text = "Escolha um arquivo no seletor Android. A alteração é preparada localmente, exibida para revisão e só gravada após confirmação. O original é copiado para o backup privado do app antes de cada gravação. Limite: 512 KiB por arquivo."
+            text = "Selecione um arquivo de texto. Revise a proposta e confirme para salvar com backup."
             textSize = 13f
-            setTextColor(Color.LTGRAY)
-            setPadding(0, dp(8), 0, dp(12))
+            setTextColor(Color.rgb(174, 194, 207))
+            setPadding(0, dp(4), 0, dp(12))
         })
 
         fileLabel = label("Nenhum arquivo selecionado.")
+        fileLabel.setPadding(dp(10), dp(10), dp(10), dp(10))
+        fileLabel.background = rounded(Color.rgb(20, 32, 43))
         body.addView(fileLabel)
-        addButton(body, "Selecionar arquivo editável") { chooseFile() }
+        addButton(body, "1. Selecionar arquivo") { chooseFile() }
 
-        body.addView(label("Instrução para a IA local"))
+        body.addView(label("2. Instrução de edição"))
         instruction = EditText(this).apply {
             hint = "Ex.: substituir \"modo antigo\" por \"modo novo\""
-            setHintTextColor(Color.GRAY)
+            setHintTextColor(Color.rgb(145, 167, 181))
             setTextColor(Color.WHITE)
             textSize = 14f
             minLines = 2
             maxLines = 4
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-            setPadding(dp(10), dp(8), dp(10), dp(8))
-            setBackgroundColor(Color.rgb(29, 43, 54))
+            setPadding(dp(11), dp(10), dp(11), dp(10))
+            background = rounded(Color.rgb(23, 36, 48))
         }
         body.addView(instruction, matchWrap())
-        addButton(body, "Interpretar instrução e preparar alteração") { prepareChange() }
+        addButton(body, "Preparar alteração") { prepareChange() }
 
-        body.addView(label("Conteúdo editável / proposta"))
+        body.addView(label("3. Conteúdo para revisar"))
         editor = EditText(this).apply {
             hint = "Selecione um arquivo primeiro."
-            setHintTextColor(Color.GRAY)
+            setHintTextColor(Color.rgb(145, 167, 181))
             setTextColor(Color.WHITE)
             textSize = 13f
             minLines = 8
             gravity = android.view.Gravity.TOP or android.view.Gravity.START
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            setPadding(dp(10), dp(10), dp(10), dp(10))
-            setBackgroundColor(Color.rgb(24, 36, 46))
+            setPadding(dp(11), dp(10), dp(11), dp(10))
+            background = rounded(Color.rgb(20, 32, 43))
             isEnabled = false
         }
-        body.addView(editor, LinearLayout.LayoutParams(-1, dp(250)).apply { topMargin = dp(5) })
-        addButton(body, "Atualizar prévia antes de salvar") { updatePreview() }
-        addButton(body, "Salvar alteração com backup") { confirmSave() }
-        addButton(body, "Restaurar último backup") { confirmRestore() }
+        body.addView(editor, LinearLayout.LayoutParams(-1, dp(220)).apply { topMargin = dp(5) })
 
         preview = TextView(this).apply {
             text = "A prévia aparecerá aqui."
             textSize = 12f
             setTextColor(Color.WHITE)
             setPadding(dp(10), dp(10), dp(10), dp(10))
-            setBackgroundColor(Color.rgb(29, 43, 54))
+            background = rounded(Color.rgb(20, 32, 43))
+            visibility = View.GONE
         }
-        body.addView(label("Prévia"))
+        previewButton = addButton(body, "Mostrar prévia") {
+            previewExpanded = !previewExpanded
+            preview.visibility = if (previewExpanded) View.VISIBLE else View.GONE
+            previewButton.text = if (previewExpanded) "Ocultar prévia" else "Mostrar prévia"
+            if (previewExpanded) updatePreview()
+        }
         body.addView(preview, matchWrap())
+        addButton(body, "Salvar com backup") { confirmSave() }
+        addButton(body, "Restaurar último backup") { confirmRestore() }
+
         status = TextView(this).apply {
             text = "Pronto. Nenhum arquivo foi alterado."
             textSize = 12f
             setTextColor(Color.rgb(128, 222, 234))
-            setPadding(0, dp(10), 0, dp(4))
+            setPadding(dp(8), dp(10), dp(8), dp(10))
+            background = rounded(Color.rgb(20, 32, 43))
         }
-        page.addView(status, matchWrap())
+        page.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         addButton(page, "Voltar às ferramentas") { finish() }
         setContentView(page)
     }
@@ -381,27 +394,37 @@ class TextFileEditorActivity : Activity() {
 
     private fun label(value: String) = TextView(this).apply {
         text = value
-        textSize = 12f
-        setTextColor(Color.LTGRAY)
-        setPadding(0, dp(9), 0, dp(5))
+        textSize = 11f
+        letterSpacing = 0.04f
+        setTextColor(Color.rgb(153, 198, 212))
+        setPadding(dp(1), dp(12), dp(1), dp(5))
     }
 
     private fun setStatus(value: String) {
         status.text = value
     }
 
-    private fun addButton(parent: LinearLayout, title: String, action: () -> Unit) {
+    private fun addButton(parent: LinearLayout, title: String, action: () -> Unit): Button {
         val button = Button(this).apply {
             text = title
             isAllCaps = false
             textSize = 13f
+            minHeight = dp(46)
             setTextColor(Color.WHITE)
-            setBackgroundColor(Color.rgb(39, 69, 83))
+            background = rounded(Color.rgb(34, 51, 65))
             setOnClickListener { action() }
         }
-        parent.addView(button, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+        parent.addView(button, LinearLayout.LayoutParams(-1, dp(48)).apply {
             topMargin = dp(5)
         })
+        return button
+    }
+
+    private fun rounded(fill: Int) = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        setColor(fill)
+        cornerRadius = dp(13).toFloat()
+        setStroke(dp(1), Color.rgb(50, 75, 92))
     }
 
     private fun matchWrap() = LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT)
