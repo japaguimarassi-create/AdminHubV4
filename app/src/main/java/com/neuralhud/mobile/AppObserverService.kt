@@ -3,6 +3,7 @@ package com.neuralhud.mobile
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -74,7 +75,7 @@ class AppObserverService : AccessibilityService() {
             LocalActionType.ENTER -> {
                 val root = rootForPackage(packageName)
                 val field = root?.let { findEditable(it) }
-                val success = field?.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id) == true ||
+                val success = field?.let { submitTextAction(it) } == true ||
                     root?.let { clickFirstLabel(it, listOf("pesquisar", "search", "enviar", "send", "ir", "go")) } == true
                 continueOrStop(instruction, packageName, index, success, if (success) "Enviei/executei Enter." else "Não encontrei um campo ou botão para Enter.")
             }
@@ -114,7 +115,7 @@ class AppObserverService : AccessibilityService() {
         val root = rootForPackage(packageName)
         val existingField = root?.let { findSearchableField(it) }
         if (existingField != null && setNodeText(existingField, query)) {
-            val submitted = existingField.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
+            val submitted = submitTextAction(existingField)
             if (!submitted) root?.let { clickFirstLabel(it, listOf("pesquisar", "search", "buscar", "go", "ir")) }
             LocalAutomationEngine.setStatus(this, "Pesquisa “$query” inserida no app.")
             handler.postDelayed({ executeStep(instruction, packageName, index + 1) }, 600L)
@@ -129,7 +130,7 @@ class AppObserverService : AccessibilityService() {
                 val nextRoot = rootForPackage(packageName)
                 val field = nextRoot?.let { findSearchableField(it) }
                 if (field != null && setNodeText(field, query)) {
-                    val submitted = field.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
+                    val submitted = submitTextAction(field)
                     if (!submitted) nextRoot?.let { clickFirstLabel(it, listOf("pesquisar", "search", "buscar", "go", "ir")) }
                     LocalAutomationEngine.setStatus(this, "Pesquisa “$query” inserida no app.")
                     handler.postDelayed({ executeStep(instruction, packageName, index + 1) }, 650L)
@@ -226,6 +227,13 @@ class AppObserverService : AccessibilityService() {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }
         return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+    }
+
+    private fun submitTextAction(node: AccessibilityNodeInfo): Boolean {
+        if (Build.VERSION.SDK_INT >= 30) {
+            return node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
+        }
+        return false
     }
 
     private fun clickText(root: AccessibilityNodeInfo, label: String): Boolean {
