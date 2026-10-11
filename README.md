@@ -1,40 +1,33 @@
-# J.A.R.V.I.S. 13.0.0
+# J.A.R.V.I.S. 14.0.0
 
-J.A.R.V.I.S. now includes a bundled offline knowledge pack and an internal restricted sandbox alongside its Android assistant, conversation history, Google login flow, and local command interpreter.
+J.A.R.V.I.S. includes an offline reference library, a restricted internal sandbox, local command handling, and Google sign-in through Credential Manager plus a server-side Supabase token validator.
 
-## Embedded knowledge
+## Automated build and OAuth diagnosis
 
-The APK bundles `app/src/main/assets/jarvis_knowledge.json` with 2,145 indexed records at build time. It contains curated reference cards across physics, mathematics, biology, chemistry, astronomy, geography, history, computing, security, and AI, plus precomputed multiplication (1–50 × 1–30), addition (0–20), and square (1–100) facts. Searches work offline; unsupported or ambiguous queries may still require an explicit Web search. This collection is a reference index, not a generative LLM, and individual cards should not be treated as exhaustive or current for fast-changing subjects.
+GitHub Actions runs unit tests, compiles the Android package, verifies its signature, probes the auth function, and writes an OAuth diagnostic report containing the exact package and SHA-1. APK publication is deliberately skipped until stable signing is configured, to avoid shipping a build whose Google Android OAuth registration breaks on the next CI run.
 
-## Internal sandbox
+Workflow: https://github.com/japaguimarassi-create/AdminHubV4/actions/workflows/build-apk.yml
 
-`JarvisInternalSandbox` is an internal module, not a screen in the user interface. Its restricted command interface supports:
+## One-time setup for stable signing
 
-- `knowledge.search <query>`
-- `math.eval <expression>`
-- `apps list`
-- `memory status`
-- `system status`
-- `plan.open <app name>`
-- `plan.web <query>`
+1. Download the private `JARVIS-GitHub-Signing-Bundle.b64.txt` file shared separately in this conversation. Do not commit it to this public repository.
+2. In GitHub open **Settings → Secrets and variables → Actions → New repository secret**.
+3. Name it `JARVIS_DEBUG_SIGNING_BUNDLE_B64` and paste the entire contents of the provided `.b64.txt` file as the secret value.
+4. In the same Google Cloud project as the Web OAuth client, create an **Android OAuth client** with package `com.jarvis.assistant.debug` and SHA-1 `A1:44:4B:B5:A9:DF:7E:A2:E8:87:CC:CB:4B:B6:4C:91:E9:58:28:31`.
+5. Run the GitHub Actions workflow manually or push to `main`. The workflow decodes the protected secret, uses the same keystore, verifies package/signature, probes the Supabase endpoint, and publishes the APK.
 
-It is not an unrestricted shell: it never invokes bash, `ProcessBuilder`, `Runtime.exec`, root access, direct file-system commands, or arbitrary network commands. Math inputs are parsed with length, recursion-depth and numeric bounds. Plans report intended effects without executing them. This provides an internal terminal-like planning and inspection layer without secret access to other apps, passwords, files, or credentials.
+The bundle is private signing material. Keep it only in a private download and in the GitHub Actions secret; never add it to source control or an issue. It includes its own passwords, so only one secret needs to be stored. It is a development signing key and must not be reused as a Play Store production signing key.
 
-## Google identity backend
+## OAuth configuration
 
-Supabase project `JARVIS-Auth` is provisioned in São Paulo. The `jarvis-auth` Edge Function is deployed, and the database tables and atomic first-owner claim migration are applied. A Web OAuth Client ID has been supplied and wired into the Android build as public configuration: `188208581214-dtshluh0fkclfq8mnupaf2nn35l1flrc.appsgoogleusercontent.com`. The deployed Edge Function now uses `GOOGLE_WEB_CLIENT_ID` from Supabase secrets first and falls back to the same public audience embedded in this build. Never place a Google Client Secret or Supabase service-role key in the APK or repository. Never place a Google Client Secret or Supabase service-role key in the APK or repository. The first account to complete real token validation claims the global owner row.
+Web client ID (used as `setServerClientId` and token audience): `188208581214-dtshluh0fkclfq8mnupaf2nn35l1flrc.apps.googleusercontent.com`
 
-## Build
+Supabase auth endpoint: `https://hgcjnkxpsnrjrofvwrzp.supabase.co/functions/v1/jarvis-auth`
 
-GitHub Actions runs local unit tests, assembles `com.jarvis.assistant.debug13`, validates the package/signature and uploads `jarvis-android-v13-debug-apk`. The debug APK is not a Play Store release signed with a permanent key.
+The native Google Credential Manager flow also needs an Android OAuth client registration. The Web Client ID alone is insufficient. Error `[16] Account reauth failed` now produces a diagnostic message showing the package and SHA-1 of the installed APK. The CI report shows the same information for each build.
 
+## Embedded offline knowledge and sandbox
 
-## Recovery for Google Credential Manager [16]
+The APK embeds 2,145 local reference records and a restricted internal sandbox for `knowledge.search`, `math.eval`, `apps list`, `memory status`, `system status`, `plan.open` and `plan.web`. The sandbox blocks arbitrary shell execution and direct access to private files or credentials; plans do not execute side effects.
 
-The primary Sign in with Google button flow now detects the exact `Account reauth failed` condition, clears Credential Manager selection state, then retries using the standard Google ID account picker with `filterByAuthorizedAccounts(false)`. Other errors, including ordinary cancellations, are not silently retried.
-
-A separate Android OAuth client may still be required. For the v13 CI build, register an Android OAuth credential in the same Google Cloud project as the Web client:
-- Android package: `com.jarvis.assistant.debug13`
-- SHA-1: read the `Signer #1 certificate SHA-1 digest` from the successful v13 GitHub Actions run.
-
-The CI runner creates a debug signing key per run, so the fingerprint may change when another APK is built. For stable repeated sign-in across builds, configure a persistent signing keystore as a protected GitHub Actions secret and use that same certificate for each build. A Web OAuth Client ID alone does not replace the Android package/SHA-1 registration for the native Credential Manager flow.
+The local knowledge index is not a generative LLM. Voice input depends on the Android speech model and permissions. Cross-app automation requires manual Android Accessibility activation.

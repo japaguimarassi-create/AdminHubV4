@@ -6,7 +6,6 @@ import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -47,9 +46,8 @@ object JarvisAuthRepository {
             .build()
         val result = try {
             credentialManager.getCredential(context = activity, request = buttonRequest)
-        } catch (e: GetCredentialException) {
-            val reauthFailed = e.message.orEmpty().contains("Account reauth failed", ignoreCase = true)
-            if (!reauthFailed) throw e
+        } catch (e: Exception) {
+            if (!JarvisCredentialErrorClassifier.isAccountReauthFailure(e)) throw e
             try {
                 credentialManager.clearCredentialState(ClearCredentialStateRequest())
             } catch (_: Exception) {
@@ -67,7 +65,7 @@ object JarvisAuthRepository {
                 credentialManager.getCredential(context = activity, request = fallbackRequest)
             } catch (fallbackError: Exception) {
                 throw IllegalStateException(
-                    "A reautenticação Google falhou. Tente escolher a conta novamente. Se continuar, o Google Cloud precisa de um cliente OAuth Android correspondente ao pacote e ao SHA-1 deste APK.",
+                    JarvisOAuthDiagnostics.accountReauthGuidance(activity),
                     fallbackError
                 )
             }
