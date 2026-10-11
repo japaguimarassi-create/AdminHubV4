@@ -20,7 +20,7 @@ Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return respond(405, { ok: false, error: "Use POST." });
 
-  const clientId = Deno.env.get("GOOGLE_WEB_CLIENT_ID");
+  const clientId = Deno.env.get("GOOGLE_WEB_CLIENT_ID") ?? "188208581214-dtshluh0fkclfq8mnupaf2nn35l1flrc.apps.googleusercontent.com";
   const projectUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!clientId || !projectUrl || !serviceKey) {
