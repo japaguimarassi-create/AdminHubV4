@@ -196,14 +196,15 @@ class HudOverlayService : Service() {
         }
         root.addView(title)
 
-        statusView = TextView(this).apply {
+        val status = TextView(this).apply {
             text = LocalAutomationEngine.getStatus(this@HudOverlayService)
             setTextColor(Color.WHITE)
             textSize = 12f
             setPadding(dp(8), dp(7), dp(8), dp(7))
             setBackgroundColor(Color.rgb(29, 43, 54))
         }
-        root.addView(statusView, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+        statusView = status
+        root.addView(status, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             bottomMargin = dp(6)
         })
 
@@ -285,7 +286,7 @@ class HudOverlayService : Service() {
         }
         root.addView(commandLabel)
 
-        commandInput = EditText(this).apply {
+        val input = EditText(this).apply {
             hint = "Quando abrir YouTube, pesquise gatos"
             setHintTextColor(Color.GRAY)
             setTextColor(Color.WHITE)
@@ -298,7 +299,8 @@ class HudOverlayService : Service() {
             setText(LocalAutomationEngine.getInstruction(this@HudOverlayService))
             imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
         }
-        root.addView(commandInput, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
+        commandInput = input
+        root.addView(input, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         panelButton(root, "Salvar e ativar instrução") {
             val raw = commandInput?.text?.toString().orEmpty()
