@@ -118,7 +118,7 @@ class MainActivity : Activity() {
             setPadding(0, dp(2), 0, dp(2))
         }
         transcript = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        transcriptScroll.addView(transcript, ScrollView.LayoutParams(-1, -2))
+        transcriptScroll.addView(transcript, android.view.ViewGroup.LayoutParams(-1, -2))
         root.addView(transcriptScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         addMessage("Olá. Sou J.A.R.V.I.S. Posso executar comandos no telefone, abrir aplicativos, calcular, guardar notas e pesquisar na Web. Para controlar outros apps, o Android exige que você ative Acessibilidade manualmente.", false)
 
@@ -459,6 +459,12 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        private const val REQUEST_ASSISTANT_ROLE = 7801
+        private const val REQUEST_MIC = 7802
+    }
+
+    companion object {
+        const val EXTRA_CONFIGURE_ASSISTANT = "configure_jarvis_assistant"
         private const val REQUEST_ASSISTANT_ROLE = 7801
         private const val REQUEST_MIC = 7802
     }
