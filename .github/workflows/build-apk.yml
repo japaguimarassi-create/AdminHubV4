@@ -88,16 +88,18 @@ jobs:
           test -s app/src/main/java/com/jarvis/assistant/JarvisKnowledgeBase.kt
           test -s app/src/main/java/com/jarvis/assistant/JarvisInternalSandbox.kt
           test -s app/src/main/assets/jarvis_knowledge.json
-          grep -q 'versionName = "14.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "15.0.0"' app/build.gradle.kts
           grep -q "SUPABASE_PUBLISHABLE_KEY" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           test -s app/src/main/java/com/jarvis/assistant/JarvisCredentialErrorClassifier.kt
+          grep -q "requestServerNonce" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
+          grep -q "setFilterByAuthorizedAccounts(authorizedOnly)" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           test -s app/src/main/java/com/jarvis/assistant/JarvisOAuthDiagnostics.kt
           grep -q "JarvisOAuthDiagnostics.accountReauthGuidance" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           grep -q "GetGoogleIdOption.Builder" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           test -s supabase/functions/jarvis-auth/index.ts
           test -s supabase/migrations/20261011000000_jarvis_global_owner.sql
           test -s docs/JARVIS_OAUTH_AUTOMATION.md
-          grep -q 'versionName = "14.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "15.0.0"' app/build.gradle.kts
           grep -q 'android:name=".LoginActivity"' app/src/main/AndroidManifest.xml
           grep -q 'android:name=".JarvisVoiceInteractionService"' app/src/main/AndroidManifest.xml
           ! grep -q 'QUERY_ALL_PACKAGES' app/src/main/AndroidManifest.xml
@@ -119,16 +121,16 @@ jobs:
           SHA1="$(printf '%s' "$CERT_INFO" | sed -n 's/.*SHA-1 digest: //p' | head -n 1)"
           SHA256="$(printf '%s' "$CERT_INFO" | sed -n 's/.*SHA-256 digest: //p' | head -n 1)"
           PACKAGE="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | sed -n "s/^package: name='\([^']*\)'.*/\1/p" | head -n 1)"
-          if [ "$JARVIS_STABLE_SIGNING" = "true" ]; then EXPECTED_PACKAGE="com.jarvis.assistant.debug"; else EXPECTED_PACKAGE="com.jarvis.assistant.debug14"; fi
+          if [ "$JARVIS_STABLE_SIGNING" = "true" ]; then EXPECTED_PACKAGE="com.jarvis.assistant.debug"; else EXPECTED_PACKAGE="com.jarvis.assistant.debug"; fi
           test "$PACKAGE" = "$EXPECTED_PACKAGE"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
           sha256sum "$APK"
           PROBE_BODY="$RUNNER_TEMP/jarvis-auth-probe.json"
-          PROBE_CODE="$(curl --silent --show-error --connect-timeout 5 --max-time 15 --output "$PROBE_BODY" --write-out '%{http_code}' -X POST "$JARVIS_AUTH_ENDPOINT" -H "apikey: $JARVIS_SUPABASE_PUBLISHABLE_KEY" -H "Content-Type: application/json" -d '{}')"
-          if [ "$PROBE_CODE" = "400" ]; then BACKEND_STATUS="Reachable; HTTP 400 is expected for an empty test request."; else BACKEND_STATUS="HTTP $PROBE_CODE; inspect function configuration."; fi
+          PROBE_CODE="$(curl --silent --show-error --connect-timeout 5 --max-time 15 --output "$PROBE_BODY" --write-out '%{http_code}' -X POST "$JARVIS_AUTH_ENDPOINT" -H "apikey: $JARVIS_SUPABASE_PUBLISHABLE_KEY" -H "Content-Type: application/json" -d '{"action":"nonce"}')"
+          if [ "$PROBE_CODE" = "200" ] && python3 -c 'import json,sys; x=json.load(open(sys.argv[1])); sys.exit(0 if x.get("ok") is True and isinstance(x.get("nonce"),str) and len(x["nonce"]) >= 32 else 1)' "$PROBE_BODY"; then BACKEND_STATUS="Reachable; server-issued nonce flow succeeded."; else BACKEND_STATUS="Nonce probe failed (HTTP $PROBE_CODE); inspect Supabase function configuration."; fi
           REPORT="$RUNNER_TEMP/jarvis-oauth-diagnostics.md"
           {
-            echo "# J.A.R.V.I.S. 14.0.0 — OAuth diagnostics"
+            echo "# J.A.R.V.I.S. 15.0.0 — OAuth diagnostics"
             echo
             echo "- Package: \`$PACKAGE\`"
             echo "- Signing SHA-1: \`$SHA1\`"
@@ -140,10 +142,10 @@ jobs:
             if [ "$JARVIS_STABLE_SIGNING" = "true" ]; then
               echo "Register this exact package and SHA-1 as an Android OAuth client in the same Google Cloud project as the Web client."
             else
-              echo "**APK publication skipped** because the stable signing secret is missing."
+              echo "**Intermediate CI signature only.** This artifact is re-signed with the stable private key before delivery.
               echo "- Intended package: \`com.jarvis.assistant.debug\`"
-              echo "- Intended SHA-1: \`A1:44:4B:B5:A9:DF:7E:A2:E8:87:CC:CB:4B:B6:4C:91:E9:58:28:31\`"
-              echo "Configure \`JARVIS_DEBUG_SIGNING_BUNDLE_B64\` using \`docs/JARVIS_OAUTH_AUTOMATION.md\` and rerun."
+              echo "- Intended stable signing SHA-1: \`5B:2E:28:1B:18:5E:4E:FA:50:0F:C7:18:89:5D:1B:7F:B0:71:20:38\`"
+              echo "Configure \`JARVIS_DEBUG_SIGNING_BUNDLE_B64\` once to make future CI artifacts use the stable signing key."
             fi
             echo
             echo "The CI report does not prove a real sign-in; test on-device after OAuth registration."
@@ -155,10 +157,19 @@ jobs:
         if: steps.signing.outputs.stable == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: jarvis-android-v14-debug-apk
+          name: jarvis-android-v15-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload intermediate APK for stable re-signing
+        if: steps.signing.outputs.stable != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-android-v15-intermediate-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload OAuth diagnostics
         if: steps.oauth_diag.outcome == 'success'

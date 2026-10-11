@@ -18,7 +18,7 @@ Create an Android OAuth client in the same Google Cloud project as the existing 
 
 - Application type: Android
 - Package name: `com.jarvis.assistant.debug`
-- SHA-1 fingerprint: `A1:44:4B:B5:A9:DF:7E:A2:E8:87:CC:CB:4B:B6:4C:91:E9:58:28:31`
+- SHA-1 fingerprint: `5B:2E:28:1B:18:5E:4E:FA:50:0F:C7:18:89:5D:1B:7F:B0:71:20:38`
 
 Keep the Web OAuth client ID in the Android build configuration. Do not replace the Web client ID with the Android client ID: `setServerClientId` and backend token audience must use the Web client ID. Google expects both a Web client and an Android client, with the latter tied to the package and signing SHA-1: https://developers.google.com/identity/sign-in/android/legacy-gsi-start?hl=en
 
@@ -26,4 +26,11 @@ Keep the Web OAuth client ID in the Android build configuration. Do not replace 
 
 Open **Actions → Build and verify J.A.R.V.I.S. APK → Run workflow** or push a commit to `main`. The pipeline runs unit tests, imports the private signing key when configured, verifies the package and certificate fingerprint, probes Supabase, writes an OAuth diagnostic report, and uploads the APK only when stable signing is enabled.
 
-If the secret is missing, the workflow refuses to publish a temporary APK and emits a report explaining why. If sign-in still fails, the report and on-device diagnostic display the exact package/SHA-1 values to compare with Google Cloud.
+If the secret is missing, the workflow publishes a clearly named intermediate CI APK only so it can be re-signed before delivery. Do not register the intermediate runner certificate as the Android OAuth client. If sign-in still fails, the report and on-device diagnostic display the exact package/SHA-1 values to compare with Google Cloud.
+
+
+## Server-issued nonce and error 16
+
+Version 15 asks the Supabase endpoint for a single-use nonce before opening the Google account selector. The token is sent back without a client-generated nonce; the server verifies the token and atomically consumes the matching unexpired nonce. The client tries authorized accounts, then all device accounts, and finally the Google button flow. It no longer clears saved credential state during a failed sign-in.
+
+The shipped APK uses package `com.jarvis.assistant.debug` and the stable private signing key whose SHA-1 is `5B:2E:28:1B:18:5E:4E:FA:50:0F:C7:18:89:5D:1B:7F:B0:71:20:38`. Register that exact package and SHA-1 in an **Android** OAuth client under the same Google Cloud project as the Web client. Keep the Web Client ID for serverClientId and token audience.

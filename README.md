@@ -31,3 +31,10 @@ The native Google Credential Manager flow also needs an Android OAuth client reg
 The APK embeds 2,145 local reference records and a restricted internal sandbox for `knowledge.search`, `math.eval`, `apps list`, `memory status`, `system status`, `plan.open` and `plan.web`. The sandbox blocks arbitrary shell execution and direct access to private files or credentials; plans do not execute side effects.
 
 The local knowledge index is not a generative LLM. Voice input depends on the Android speech model and permissions. Cross-app automation requires manual Android Accessibility activation.
+
+
+## Login repair 15.0.0
+
+The client now obtains a one-time nonce from Supabase before requesting a Google ID token, matching the Edge Function's replay-protected protocol. Credential Manager tries previously authorized accounts, then all accounts, then the dedicated Google button flow. It does not clear saved account state during a failed attempt. Error details include the installed package and signing SHA-1.
+
+The distributable package is `com.jarvis.assistant.debug`, signed with the stable key fingerprint `5B:2E:28:1B:18:5E:4E:FA:50:0F:C7:18:89:5D:1B:7F:B0:71:20:38`. Create an Android OAuth client for that exact package/fingerprint in the same Google Cloud project as the Web client. The Web client ID remains the ID-token audience; it is not replaced with the Android client ID.
