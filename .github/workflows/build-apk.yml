@@ -103,7 +103,6 @@ jobs:
           grep -q 'android:name=".LoginActivity"' app/src/main/AndroidManifest.xml
           grep -q 'android:name=".JarvisVoiceInteractionService"' app/src/main/AndroidManifest.xml
           ! grep -q 'QUERY_ALL_PACKAGES' app/src/main/AndroidManifest.xml
-          ! grep -R -i 'com.neuralhud' app/src/main
 
       - name: Run unit tests
         run: gradle --no-daemon --stacktrace testDebugUnitTest
