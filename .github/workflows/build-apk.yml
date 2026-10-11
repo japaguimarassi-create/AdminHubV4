@@ -39,16 +39,16 @@ jobs:
 
       - name: Verify source configuration
         run: |
-          test -s app/src/main/java/com/neuralhud/mobile/MainActivity.kt
-          test -s app/src/main/java/com/neuralhud/mobile/JarvisOrbView.kt
-          test -s app/src/main/java/com/neuralhud/mobile/JarvisWebActivity.kt
-          test -s app/src/main/java/com/neuralhud/mobile/JarvisCommandRouter.kt
-          test -s app/src/main/java/com/neuralhud/mobile/JarvisLocalBrain.kt
+          test -s app/src/main/java/com/jarvis/assistant/MainActivity.kt
+          test -s app/src/main/java/com/jarvis/assistant/JarvisOrbView.kt
+          test -s app/src/main/java/com/jarvis/assistant/JarvisWebActivity.kt
+          test -s app/src/main/java/com/jarvis/assistant/JarvisCommandRouter.kt
+          test -s app/src/main/java/com/jarvis/assistant/JarvisLocalBrain.kt
           test -s app/src/main/res/drawable/ic_jarvis_orb.xml
           grep -q 'applicationId = "com.jarvis.assistant"' app/build.gradle.kts
           grep -q 'versionName = "7.0.0"' app/build.gradle.kts
           grep -q 'android:name=".JarvisWebActivity"' app/src/main/AndroidManifest.xml
-          grep -q 'HIDDEN_NEURONS = 2678' app/src/main/java/com/neuralhud/mobile/JarvisLocalBrain.kt
+          grep -q 'HIDDEN_NEURONS = 2678' app/src/main/java/com/jarvis/assistant/JarvisLocalBrain.kt
           ! grep -q 'QUERY_ALL_PACKAGES' app/src/main/AndroidManifest.xml
           ! grep -R -i 'Neural HUD\|neural-hud\|com.neuralhud' app/src/main README.md
 
