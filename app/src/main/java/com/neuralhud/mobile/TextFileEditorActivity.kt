@@ -125,6 +125,7 @@ class TextFileEditorActivity : Activity() {
         }
         page.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         addButton(page, "Voltar às ferramentas") { finish() }
+        SystemBarInsets.apply(page)
         setContentView(page)
     }
 
