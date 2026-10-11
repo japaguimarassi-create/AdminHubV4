@@ -37,6 +37,8 @@ jobs:
         run: |
           test -s app/src/main/java/com/neuralhud/mobile/LocalAutomationEngine.kt
           test -s app/src/main/java/com/neuralhud/mobile/AppObserverService.kt
+          test -s app/src/main/java/com/neuralhud/mobile/ToolboxActivity.kt
+          grep -q 'ToolboxActivity' app/src/main/AndroidManifest.xml
           grep -q 'versionName = "2.0.0"' app/build.gradle.kts
 
       - name: Build debug APK
