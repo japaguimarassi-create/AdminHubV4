@@ -3,10 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val releaseStorePath = System.getenv("NEURALHUD_KEYSTORE_PATH")
-val releaseStorePassword = System.getenv("NEURALHUD_KEYSTORE_PASSWORD")
-val releaseKeyAlias = System.getenv("NEURALHUD_KEY_ALIAS")
-val releaseKeyPassword = System.getenv("NEURALHUD_KEY_PASSWORD")
+val releaseStorePath = System.getenv("JARVIS_KEYSTORE_PATH")
+val releaseStorePassword = System.getenv("JARVIS_KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("JARVIS_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("JARVIS_KEY_PASSWORD")
 val canSignRelease = listOf(
     releaseStorePath,
     releaseStorePassword,
@@ -19,11 +19,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.neuralhud.mobile"
+        applicationId = "com.jarvis.assistant"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "6.0.0"
+        versionCode = 7
+        versionName = "7.0.0"
     }
 
     compileOptions {
@@ -54,7 +54,7 @@ android {
             }
         }
         debug {
-            applicationIdSuffix = ".debug6"
+            applicationIdSuffix = ".debug7"
             versionNameSuffix = "-debug"
         }
     }
