@@ -70,11 +70,11 @@ class AppObserverService : AccessibilityService() {
             }
             LocalActionType.BACK -> {
                 val success = performGlobalAction(GLOBAL_ACTION_BACK)
-                continueOrStop(instruction, packageName, index, success, if (success) "Voltei uma tela." else "O Android não permitiu voltar.")
+                LocalAutomationEngine.setStatus(this, if (success) "Voltei uma tela." else "O Android não permitiu voltar.")
             }
             LocalActionType.HOME -> {
                 val success = performGlobalAction(GLOBAL_ACTION_HOME)
-                continueOrStop(instruction, packageName, index, success, if (success) "Voltei à tela inicial." else "O Android não permitiu ir à tela inicial.")
+                LocalAutomationEngine.setStatus(this, if (success) "Voltei à tela inicial." else "O Android não permitiu ir à tela inicial.")
             }
             LocalActionType.ENTER -> {
                 val root = rootForPackage(packageName)
