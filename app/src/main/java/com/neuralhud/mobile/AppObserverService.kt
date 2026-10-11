@@ -171,7 +171,8 @@ class AppObserverService : AccessibilityService() {
                 packageManager.getLaunchIntentForPackage(info.packageName) != null
         } ?: return false
         return try {
-            startActivity(packageManager.getLaunchIntentForPackage(match.packageName)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            val launchIntent = packageManager.getLaunchIntentForPackage(match.packageName) ?: return false
+            startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             true
         } catch (_: Exception) {
             false
