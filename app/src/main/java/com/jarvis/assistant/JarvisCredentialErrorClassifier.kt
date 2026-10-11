@@ -4,7 +4,8 @@ object JarvisCredentialErrorClassifier {
     fun isAccountReauthFailure(error: Throwable): Boolean {
         return anyCause(error) { current ->
             current.message.orEmpty().contains("Account reauth failed", ignoreCase = true) ||
-                current.message.orEmpty().contains("[16]", ignoreCase = true)
+                (current.message.orEmpty().contains("[16]", ignoreCase = true) &&
+                    !current.message.orEmpty().contains("cancel", ignoreCase = true))
         }
     }
 
