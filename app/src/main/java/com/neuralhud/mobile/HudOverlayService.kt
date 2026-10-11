@@ -263,6 +263,7 @@ class HudOverlayService : Service() {
 
         panelButton(controls, "Ativar IA nos aplicativos (Acessibilidade)") {
             refreshStatus("Ative o serviço Neural HUD nas configurações de Acessibilidade do Android. O Android exige sua autorização.")
+            removePanel()
             try {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             } catch (_: Exception) {
