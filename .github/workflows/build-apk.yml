@@ -110,6 +110,15 @@ jobs:
       - name: Build debug APK
         run: gradle --no-daemon --stacktrace assembleDebug
 
+      - name: Prepare Android signing utility for the repair build
+        if: steps.signing.outputs.stable != 'true'
+        run: |
+          TOOLS_DIR="$RUNNER_TEMP/jarvis-signing-tools"
+          mkdir -p "$TOOLS_DIR/lib"
+          cp "$ANDROID_HOME/build-tools/36.0.0/apksigner" "$TOOLS_DIR/"
+          cp -a "$ANDROID_HOME/build-tools/36.0.0/lib/." "$TOOLS_DIR/lib/"
+          tar -czf "$RUNNER_TEMP/jarvis-signing-tools.tar.gz" -C "$TOOLS_DIR" .
+
       - name: Verify APK and generate OAuth diagnostics
         id: oauth_diag
         run: |
@@ -167,6 +176,15 @@ jobs:
         with:
           name: jarvis-android-v15-intermediate-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Android signing utility
+        if: steps.signing.outputs.stable != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-apksigner-tools
+          path: ${{ runner.temp }}/jarvis-signing-tools.tar.gz
           if-no-files-found: error
           retention-days: 7
 
