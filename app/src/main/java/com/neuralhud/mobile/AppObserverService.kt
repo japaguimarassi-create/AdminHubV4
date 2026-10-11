@@ -2,6 +2,8 @@ package com.neuralhud.mobile
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
 import android.content.Intent
 import android.os.Build
 import android.net.Uri
@@ -15,9 +17,51 @@ class AppObserverService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var activeTargetPackage = ""
 
+    private val jarvisReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                ACTION_EXECUTE_NOW -> {
+                    val raw = intent.getStringExtra(EXTRA_INSTRUCTION).orEmpty()
+                    val instruction = LocalAutomationEngine.parse(raw)
+                    if (instruction == null) {
+                        LocalAutomationEngine.setStatus(this@AppObserverService, "Não reconheci uma ação executável nesse comando.")
+                        return
+                    }
+                    val target = activeTargetPackage.ifBlank {
+                        rootInActiveWindow?.packageName?.toString().orEmpty()
+                    }
+                    if (target.isBlank() || target == packageName || isSystemOrLauncher(target)) {
+                        LocalAutomationEngine.setStatus(this@AppObserverService, "Abra primeiro o aplicativo no qual deseja executar o comando.")
+                        return
+                    }
+                    LocalAutomationEngine.setStatus(this@AppObserverService, "J.A.R.V.I.S.: executando comando em $target.")
+                    handler.post { executeStep(instruction, target, 0) }
+                }
+                ACTION_GLOBAL_COMMAND -> {
+                    val name = intent.getStringExtra(EXTRA_GLOBAL_ACTION).orEmpty()
+                    val action = when (name) {
+                        "back" -> GLOBAL_ACTION_BACK
+                        "home" -> GLOBAL_ACTION_HOME
+                        "notifications" -> GLOBAL_ACTION_NOTIFICATIONS
+                        "quick_settings" -> GLOBAL_ACTION_QUICK_SETTINGS
+                        "recents" -> GLOBAL_ACTION_RECENTS
+                        "screenshot" -> if (Build.VERSION.SDK_INT >= 28) GLOBAL_ACTION_TAKE_SCREENSHOT else -1
+                        else -> -1
+                    }
+                    val ok = action != -1 && performGlobalAction(action)
+                    LocalAutomationEngine.setStatus(
+                        this@AppObserverService,
+                        if (ok) "J.A.R.V.I.S.: ação global executada ($name)." else "O Android não permitiu a ação global ($name)."
+                    )
+                }
+            }
+        }
+    }
+
     override fun onServiceConnected() {
         super.onServiceConnected()
-        LocalAutomationEngine.setStatus(this, "IA local pronta. Salve uma instrução no HUD para ativá-la.")
+        LocalAutomationEngine.setStatus(this, "Núcleo J.A.R.V.I.S. conectado. Comandos locais prontos.")
+        registerJarvisReceiver()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -286,7 +330,33 @@ class AppObserverService : AccessibilityService() {
         }
     }
 
+    private fun registerJarvisReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(ACTION_EXECUTE_NOW)
+            addAction(ACTION_GLOBAL_COMMAND)
+        }
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(jarvisReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        else {
+            @Suppress("DEPRECATION")
+            registerReceiver(jarvisReceiver, filter)
+        }
+    }
+
     override fun onInterrupt() {
+        handler.removeCallbacksAndMessages(null)
         activeTargetPackage = ""
+    }
+
+    override fun onDestroy() {
+        try { unregisterReceiver(jarvisReceiver) } catch (_: Exception) {}
+        handler.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    companion object {
+        const val ACTION_EXECUTE_NOW = "com.neuralhud.mobile.JARVIS_EXECUTE_NOW"
+        const val ACTION_GLOBAL_COMMAND = "com.neuralhud.mobile.JARVIS_GLOBAL_COMMAND"
+        const val EXTRA_INSTRUCTION = "instruction"
+        const val EXTRA_GLOBAL_ACTION = "global_action"
     }
 }
