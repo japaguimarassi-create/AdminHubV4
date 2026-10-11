@@ -208,10 +208,11 @@ object JarvisCommandRouter {
         }
 
         val guess = JarvisLocalBrain.classify(appContext, raw)
-        return launchWebSearch(
+        LocalAutomationEngine.setStatus(
             appContext,
-            raw + " — pedido não mapeado localmente; categoria estimada: " + guess.intent.name.lowercase(Locale.ROOT).replace('_', ' ')
+            "Pedido não mapeado como ação local. Categoria estimada pelo classificador: " + guess.intent.name.lowercase(Locale.ROOT).replace('_', ' ') + ". Abrindo pesquisa Web."
         )
+        return launchWebSearch(appContext, raw)
     }
 
     private fun globalAction(context: Context, action: String): String {
@@ -384,7 +385,7 @@ object JarvisCommandRouter {
             .trim()
 
     private fun helpText(): String =
-        "J.A.R.V.I.S. local (2.678 neurônios): abrir aplicativos e sites, pesquisar, calcular, informar hora/data, controlar volume e mídia, abrir Configurações, voltar, início, notificações, capturar tela, notas locais e automação por texto. Perguntas gerais são encaminhadas ao navegador quando necessário. Voz usa reconhecimento no dispositivo quando disponível; nenhuma API de IA é chamada."
+        "J.A.R.V.I.S. local: abrir apps/sites, pesquisar, calcular, hora/data, volume/mídia, Configurações, voltar/início/notificações, captura de tela, notas, automação e até 100 macros aprendidas. Ensine uma macro com: ensine frase => ação. O classificador tem 2.678 unidades ocultas, mas não é um LLM. Voz usa reconhecimento offline quando instalado; pedidos desconhecidos abrem uma pesquisa no navegador. Nenhuma API de IA é chamada."
 
     private class MathParser(private val source: String) {
         private var index = 0
