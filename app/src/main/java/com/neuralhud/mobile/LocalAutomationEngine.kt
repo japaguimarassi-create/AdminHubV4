@@ -28,11 +28,13 @@ object LocalAutomationEngine {
     private const val KEY_LAST_PACKAGE = "last_run_package"
     private const val KEY_LAST_TIME = "last_run_elapsed"
     private const val KEY_STATUS = "last_status"
+    private const val KEY_ONE_SHOT = "one_shot"
 
-    fun saveInstruction(context: Context, raw: String, ignoreCurrentPackage: Boolean = true): String {
+    fun saveInstruction(context: Context, raw: String, ignoreCurrentPackage: Boolean = true, once: Boolean = false): String {
         val parsed = parse(raw) ?: run {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putBoolean(KEY_ACTIVE, false)
+                .putBoolean(KEY_ONE_SHOT, false)
                 .putString(KEY_STATUS, "Instrução não reconhecida. Automação pausada.")
                 .apply()
             return "Não entendi a instrução. Exemplos: “Quando abrir YouTube, pesquise gatos” ou “digite Olá”."
@@ -44,6 +46,7 @@ object LocalAutomationEngine {
             .putString(KEY_RAW, parsed.original)
             .putString(KEY_TARGET, parsed.targetApp ?: "*")
             .putBoolean(KEY_ACTIVE, true)
+            .putBoolean(KEY_ONE_SHOT, once)
             .putString(KEY_ARMED_IGNORE, if (ignoreCurrentPackage) currentPackage else "")
             .putString(KEY_LAST_PACKAGE, "")
             .putLong(KEY_LAST_TIME, 0L)
@@ -151,7 +154,7 @@ object LocalAutomationEngine {
             .putLong(KEY_LAST_TIME, now)
             .putString(KEY_STATUS, "Executando no app $packageName…")
             .apply()
-        if (target == "*") prefs.edit().putBoolean(KEY_ACTIVE, false).apply()
+        if (target == "*" || prefs.getBoolean(KEY_ONE_SHOT, false)) prefs.edit().putBoolean(KEY_ACTIVE, false).putBoolean(KEY_ONE_SHOT, false).apply()
         return parsed
     }
 
