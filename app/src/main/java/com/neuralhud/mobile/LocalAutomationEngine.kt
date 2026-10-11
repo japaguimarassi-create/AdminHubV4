@@ -30,7 +30,13 @@ object LocalAutomationEngine {
     private const val KEY_STATUS = "last_status"
 
     fun saveInstruction(context: Context, raw: String): String {
-        val parsed = parse(raw) ?: return "Não entendi a instrução. Exemplos: “Quando abrir YouTube, pesquise gatos” ou “digite Olá”."
+        val parsed = parse(raw) ?: run {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putBoolean(KEY_ACTIVE, false)
+                .putString(KEY_STATUS, "Instrução não reconhecida. Automação pausada.")
+                .apply()
+            return "Não entendi a instrução. Exemplos: “Quando abrir YouTube, pesquise gatos” ou “digite Olá”."
+        }
         val observerPrefs = context.getSharedPreferences("neural_hud_observer", Context.MODE_PRIVATE)
         val currentPackage = observerPrefs.getString("last_package", "") ?: ""
         val targetDescription = parsed.targetApp ?: "próximo aplicativo aberto"
