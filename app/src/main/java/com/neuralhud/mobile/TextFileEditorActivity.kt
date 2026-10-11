@@ -1,4 +1,4 @@
-package com.neuralhud.mobile
+package com.jarvis.assistant
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -318,7 +318,7 @@ class TextFileEditorActivity : Activity() {
         }
         AlertDialog.Builder(this)
             .setTitle("Confirmar edição")
-            .setMessage("O arquivo “$currentName” será substituído pelo conteúdo da proposta. Antes, o conteúdo atual será copiado para o backup privado do Neural HUD. Só continue se conferiu a prévia.")
+            .setMessage("O arquivo “$currentName” será substituído pelo conteúdo da proposta. Antes, o conteúdo atual será copiado para o backup privado do J.A.R.V.I.S.. Só continue se conferiu a prévia.")
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Criar backup e salvar") { _, _ -> saveChanges(uri, bytes, proposed) }
             .show()
