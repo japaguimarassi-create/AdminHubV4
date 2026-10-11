@@ -459,11 +459,6 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        private const val REQUEST_ASSISTANT_ROLE = 7801
-        private const val REQUEST_MIC = 7802
-    }
-
-    companion object {
         const val EXTRA_CONFIGURE_ASSISTANT = "configure_jarvis_assistant"
         private const val REQUEST_ASSISTANT_ROLE = 7801
         private const val REQUEST_MIC = 7802
