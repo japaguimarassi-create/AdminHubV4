@@ -40,7 +40,11 @@ class HudOverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (Build.VERSION.SDK_INT >= 34) {\n            startForeground(71, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)\n        } else {\n            startForeground(71, buildNotification())\n        }
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(71, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(71, buildNotification())
+        }
         if (!Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "Permissão de sobreposição necessária.", Toast.LENGTH_LONG).show()
             stopSelf()
