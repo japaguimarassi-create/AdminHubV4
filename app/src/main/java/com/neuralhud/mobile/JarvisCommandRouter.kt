@@ -283,11 +283,14 @@ object JarvisCommandRouter {
 
         val urlCandidate = extractUrl(raw, normalized)
         if (urlCandidate != null) {
-            return launchIntent(
-                appContext,
-                Intent(Intent.ACTION_VIEW, Uri.parse(urlCandidate)).addCategory(Intent.CATEGORY_BROWSABLE),
-                "Abrindo o endereço solicitado."
-            )
+            return try {
+                appContext.startActivity(Intent(appContext, JarvisWebActivity::class.java)
+                    .putExtra(JarvisWebActivity.EXTRA_URL, urlCandidate)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                "Abrindo o site dentro do J.A.R.V.I.S."
+            } catch (e: Exception) {
+                "Não consegui abrir o site: " + (e.message ?: e.javaClass.simpleName)
+            }
         }
 
         val openApp = openAppPattern.matchEntire(raw)
@@ -437,11 +440,14 @@ object JarvisCommandRouter {
 
     private fun launchWebSearch(context: Context, query: String): String {
         if (query.isBlank()) return "Informe o que deseja pesquisar."
-        return launchIntent(
-            context,
-            Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(query))),
-            "Pesquisa aberta no navegador. O núcleo de IA continua sem API; a pesquisa requer Internet."
-        )
+        return try {
+            context.startActivity(Intent(context, JarvisWebActivity::class.java)
+                .putExtra(JarvisWebActivity.EXTRA_QUERY, query)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            "Pesquisa aberta dentro do J.A.R.V.I.S. A consulta usa a Internet; o classificador local não é um LLM."
+        } catch (e: Exception) {
+            "Não consegui abrir a pesquisa interna: " + (e.message ?: e.javaClass.simpleName)
+        }
     }
 
     private fun adjustVolume(context: Context, direction: Int): String {
