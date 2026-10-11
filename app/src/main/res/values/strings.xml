@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">J.A.R.V.I.S. • Neural HUD</string>
-    <string name="accessibility_description">Motor local do J.A.R.V.I.S. com automação global opcional. Lê a interface ativa e executa instruções definidas pelo usuário apenas após habilitação manual. Campos de senha são ignorados; comandos e arquivos não são enviados a uma API de IA.</string>
+    <string name="app_name">J.A.R.V.I.S.</string>
+    <string name="accessibility_description">Automação opcional do J.A.R.V.I.S. Pode observar a interface ativa e executar instruções definidas pelo usuário somente depois que o serviço for ativado manualmente. Campos de senha são ignorados. Não envia comandos a uma API de IA e não executa código arbitrário.</string>
 </resources>
