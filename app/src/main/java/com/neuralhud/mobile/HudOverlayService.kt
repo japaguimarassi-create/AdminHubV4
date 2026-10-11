@@ -199,7 +199,7 @@ class HudOverlayService : Service() {
 
         val scroll = ScrollView(this).apply { isFillViewport = true }
         val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        scroll.addView(content, ScrollView.LayoutParams(-1, -2))
+        scroll.addView(content, -1, -2)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
         val header = LinearLayout(this).apply {
