@@ -83,6 +83,93 @@ object JarvisCommandRouter {
             }
         }
 
+        val planned = LocalAutomationEngine.parse(raw)
+        if (planned != null && planned.targetApp == null && planned.actions.size > 1) {
+            if (!isAccessibilityEnabled(appContext)) {
+                return "Entendi um plano com ${planned.actions.size} etapas, mas a execução entre apps precisa do serviço J.A.R.V.I.S. em Acessibilidade. Ative-o e repita o comando."
+            }
+            appContext.sendBroadcast(
+                Intent(AppObserverService.ACTION_EXECUTE_NOW)
+                    .setPackage(appContext.packageName)
+                    .putExtra(AppObserverService.EXTRA_INSTRUCTION, raw)
+            )
+            return "Plano local recebido: ${planned.actions.size} etapas. Vou executar em sequência e parar se uma etapa falhar."
+        }
+
+        val timer = Regex("^(?:(?:defina|coloque|crie|inicie|configure|definir|iniciar)\\s+)?(?:um\\s+)?(?:timer|temporizador)\\s+(?:para|de)?\\s*(\\d{1,3})\\s*(s|segundos?|min|minutos?|h|horas?)$").matchEntire(normalized)
+        if (timer != null) {
+            val amount = timer.groupValues[1].toIntOrNull() ?: 0
+            val unit = timer.groupValues[2]
+            val seconds = when {
+                unit.startsWith("min") -> amount * 60
+                unit == "h" || unit.startsWith("hora") -> amount * 3600
+                else -> amount
+            }
+            if (seconds !in 1..86400) return "O timer precisa estar entre 1 segundo e 24 horas."
+            val intent = Intent(android.provider.AlarmClock.ACTION_SET_TIMER)
+                .putExtra(android.provider.AlarmClock.EXTRA_LENGTH, seconds)
+                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "J.A.R.V.I.S.")
+                .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+            return launchIntent(appContext, intent, "Timer de $amount $unit preparado no app de relógio.")
+        }
+
+        val alarm = Regex("^(?:(?:crie|defina|configure|coloque|marque)\\s+)?(?:um\\s+)?(?:alarme|despertador)\\s+(?:para|as|às)?\\s*(\\d{1,2})(?::|h)(\\d{2})$").matchEntire(normalized)
+        if (alarm != null) {
+            val hour = alarm.groupValues[1].toIntOrNull() ?: -1
+            val minute = alarm.groupValues[2].toIntOrNull() ?: -1
+            if (hour !in 0..23 || minute !in 0..59) return "Informe um horário válido, por exemplo: alarme para 07:30."
+            val intent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM)
+                .putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour)
+                .putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute)
+                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "J.A.R.V.I.S.")
+                .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+            return launchIntent(appContext, intent, "Pedido de alarme para %02d:%02d enviado ao app de relógio.".format(hour, minute))
+        }
+
+        val navigation = Regex("^(?:navegue para|navegar para|me leve para|me leve ate|como chegar em|rota para|direcoes para|direcoes ate)\\s+(.+)$").matchEntire(normalized)
+        if (navigation != null) {
+            val destination = navigation.groupValues[1].trim()
+            val navUri = Uri.parse("google.navigation:q=" + Uri.encode(destination))
+            val intent = Intent(Intent.ACTION_VIEW, navUri).addCategory(Intent.CATEGORY_DEFAULT)
+            val result = launchIntent(appContext, intent, "Abrindo navegação para $destination.")
+            if (!result.startsWith("Nenhum aplicativo")) return result
+            return launchIntent(
+                appContext,
+                Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(destination))),
+                "Abrindo o local $destination em um app de mapas."
+            )
+        }
+
+        if (normalized in setOf("abrir camera", "abra a camera", "abrir a camera", "tirar foto", "abrir camera fotografica")) {
+            return launchIntent(appContext, Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE), "Abrindo a câmera.")
+        }
+        if (normalized in setOf("abrir calculadora", "abra a calculadora", "calculadora")) {
+            val target = findLaunchableApp(appContext, "calculadora")
+            if (target != null && launchApp(appContext, target.label)) return "Abrindo a calculadora."
+            return launchIntent(appContext, Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CALCULATOR), "Abrindo uma calculadora.")
+        }
+
+        val copy = Regex("^(?:copie|copiar|coloque na area de transferencia|copie para a area de transferencia)\\s+(.+)$").matchEntire(raw)
+        if (copy != null) {
+            val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("J.A.R.V.I.S.", copy.groupValues[1].trim()))
+            return "Texto copiado para a área de transferência."
+        }
+
+        val share = Regex("(?i)^(?:compartilhe|compartilhar|envie para compartilhar|compartilhe o texto)\\s+(.+)$").matchEntire(raw)
+        if (share != null) {
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, share.groupValues[1].trim())
+            }
+            return try {
+                appContext.startActivity(Intent.createChooser(send, "Compartilhar com…").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                "Escolha o aplicativo para compartilhar o texto."
+            } catch (_: Exception) {
+                "Não consegui abrir o seletor de compartilhamento."
+            }
+        }
+
         if (isTimeRequest(normalized)) {
             val now = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm", Locale.forLanguageTag("pt-BR")))
             return "Agora são $now."
@@ -238,8 +325,21 @@ object JarvisCommandRouter {
     private data class LaunchTarget(val label: String, val packageName: String)
 
     private fun findLaunchableApp(context: Context, requested: String): LaunchTarget? {
-        val target = normalize(cleanAppName(requested))
+        var target = normalize(cleanAppName(requested))
         if (target.isBlank()) return null
+        val aliases = mapOf(
+            "wa" to "whatsapp",
+            "zap" to "whatsapp",
+            "maps" to "google maps",
+            "mapas" to "google maps",
+            "navegador" to "chrome",
+            "browser" to "chrome",
+            "insta" to "instagram",
+            "yt" to "youtube",
+            "musica" to "spotify",
+            "music" to "spotify"
+        )
+        target = aliases[target] ?: target
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         return try {
             @Suppress("DEPRECATION")
