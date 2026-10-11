@@ -17,7 +17,6 @@ class AppObserverService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        LocalNeuralModel(this)
         LocalAutomationEngine.setStatus(this, "IA local pronta. Salve uma instrução no HUD para ativá-la.")
     }
 
