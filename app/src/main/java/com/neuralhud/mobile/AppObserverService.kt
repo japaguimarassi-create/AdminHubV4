@@ -150,11 +150,15 @@ class AppObserverService : AccessibilityService() {
             }
             LocalActionType.SEARCH -> executeSearch(instruction, packageName, index, action.argument)
             LocalActionType.OPEN_APP -> {
-                val opened = launchApp(action.argument)
-                LocalAutomationEngine.setStatus(
-                    this,
-                    if (opened) "Abri o app “${action.argument}”." else "Não encontrei um app chamado “${action.argument}”."
-                )
+                val previousPackage = packageName
+                val targetPackage = resolveLaunchablePackage(action.argument)
+                val opened = targetPackage != null && launchPackage(targetPackage)
+                if (!opened) {
+                    LocalAutomationEngine.setStatus(this, "Não consegui abrir o app “${action.argument}”.")
+                    return
+                }
+                LocalAutomationEngine.setStatus(this, "J.A.R.V.I.S.: abri “${action.argument}”. Aguardando a próxima tela…")
+                waitForAppTransition(instruction, previousPackage, index + 1, 0)
             }
         }
     }
@@ -202,30 +206,72 @@ class AppObserverService : AccessibilityService() {
         }
     }
 
-    private fun launchApp(label: String): Boolean {
-        val apps = try {
-            if (android.os.Build.VERSION.SDK_INT >= 33) {
-                packageManager.getInstalledApplications(android.content.pm.PackageManager.ApplicationInfoFlags.of(0))
-            } else {
-                @Suppress("DEPRECATION")
-                packageManager.getInstalledApplications(0)
-            }
-        } catch (_: Exception) {
-            return false
-        }
-        val target = LocalAutomationEngine.normalize(label)
-        val match = apps.firstOrNull { info ->
-            info.packageName != packageName &&
-                LocalAutomationEngine.normalize(packageManager.getApplicationLabel(info).toString()).contains(target) &&
-                packageManager.getLaunchIntentForPackage(info.packageName) != null
-        } ?: return false
+    private fun resolveLaunchablePackage(label: String): String? {
+        val target = LocalAutomationEngine.normalize(label.trim())
+        if (target.isBlank()) return null
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         return try {
-            val launchIntent = packageManager.getLaunchIntentForPackage(match.packageName) ?: return false
-            startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            @Suppress("DEPRECATION")
+            packageManager.queryIntentActivities(launcherIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+                .asSequence()
+                .map { it.activityInfo.packageName to it.loadLabel(packageManager).toString() }
+                .filter { it.first != packageName }
+                .distinctBy { it.first }
+                .sortedBy { (pkg, appLabel) ->
+                    when {
+                        LocalAutomationEngine.normalize(appLabel) == target -> 0
+                        LocalAutomationEngine.normalize(appLabel).startsWith(target) -> 1
+                        LocalAutomationEngine.normalize(appLabel).contains(target) -> 2
+                        pkg.contains(target) -> 3
+                        else -> 9
+                    }
+                }
+                .firstOrNull { (pkg, appLabel) ->
+                    LocalAutomationEngine.normalize(appLabel) == target ||
+                        LocalAutomationEngine.normalize(appLabel).startsWith(target) ||
+                        LocalAutomationEngine.normalize(appLabel).contains(target) ||
+                        pkg.contains(target)
+                }?.first
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun launchApp(label: String): Boolean {
+        val packageName = resolveLaunchablePackage(label) ?: return false
+        return launchPackage(packageName)
+    }
+
+    private fun launchPackage(targetPackage: String): Boolean {
+        return try {
+            val intent = packageManager.getLaunchIntentForPackage(targetPackage) ?: return false
+            startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             true
         } catch (_: Exception) {
             false
         }
+    }
+
+    private fun waitForAppTransition(
+        instruction: ParsedInstruction,
+        previousPackage: String,
+        nextIndex: Int,
+        attempt: Int
+    ) {
+        handler.postDelayed({
+            val current = activeTargetPackage.ifBlank { rootInActiveWindow?.packageName?.toString().orEmpty() }
+            if (current.isNotBlank() && current != previousPackage &&
+                current != packageName && !isSystemOrLauncher(current)) {
+                executeStep(instruction, current, nextIndex)
+            } else if (attempt < 12) {
+                waitForAppTransition(instruction, previousPackage, nextIndex, attempt + 1)
+            } else {
+                LocalAutomationEngine.setStatus(
+                    this,
+                    "O app abriu, mas não consegui confirmar a próxima tela. Continue manualmente ou divida o comando."
+                )
+            }
+        }, 250L)
     }
 
     private fun continueOrStop(
