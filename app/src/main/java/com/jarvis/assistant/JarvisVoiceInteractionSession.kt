@@ -210,7 +210,6 @@ class JarvisVoiceInteractionSession(private val host: Context) : VoiceInteractio
                     orb?.mode = OrbMode.LISTENING
                 }
                 override fun onRmsChanged(rmsdB: Float) { orb?.setAudioLevel(rmsdB) }
-                override fun onRmsChanged(rmsdB: Float) {}
                 override fun onBufferReceived(buffer: ByteArray?) {}
                 override fun onEndOfSpeech() {
                     status?.text = "Processando fala no dispositivo…"
