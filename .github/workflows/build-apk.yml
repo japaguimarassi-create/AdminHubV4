@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      JARVIS_GOOGLE_WEB_CLIENT_ID: 188208581214-dtshluh0fkclfq8mnupaf2nn35l1flrc.appsgoogleusercontent.com
+      JARVIS_GOOGLE_WEB_CLIENT_ID: 188208581214-dtshluh0fkclfq8mnupaf2nn35l1flrc.apps.googleusercontent.com
       JARVIS_AUTH_ENDPOINT: https://hgcjnkxpsnrjrofvwrzp.supabase.co/functions/v1/jarvis-auth
       JARVIS_SUPABASE_PUBLISHABLE_KEY: sb_publishable_u45gasHV_JVFSXYtWMUVMA_Wkb4EnZN
     steps:
@@ -51,7 +51,7 @@ jobs:
           test -s app/src/main/java/com/jarvis/assistant/JarvisKnowledgeBase.kt
           test -s app/src/main/java/com/jarvis/assistant/JarvisInternalSandbox.kt
           test -s app/src/main/assets/jarvis_knowledge.json
-          grep -q 'versionName = "11.0.0"' app/build.gradle.kts
+          grep -q 'versionName = "12.0.0"' app/build.gradle.kts
           grep -q "SUPABASE_PUBLISHABLE_KEY" app/src/main/java/com/jarvis/assistant/JarvisAuthRepository.kt
           test -s supabase/functions/jarvis-auth/index.ts
           test -s supabase/migrations/20261011000000_jarvis_global_owner.sql
@@ -71,7 +71,7 @@ jobs:
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.jarvis.assistant.debug11'"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -q "package: name='com.jarvis.assistant.debug12'"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK"
           sha256sum "$APK"
@@ -79,7 +79,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jarvis-android-v11-debug-apk
+          name: jarvis-android-v12-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
