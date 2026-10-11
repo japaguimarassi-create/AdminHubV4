@@ -101,11 +101,11 @@ class LoginActivity : Activity() {
         status = TextView(this).apply {
             text = when {
                 BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank() ->
-                    "Backend Supabase criado. Falta o Web Client ID do Google: configure JARVIS_GOOGLE_WEB_CLIENT_ID no GitHub e GOOGLE_WEB_CLIENT_ID nos segredos do Supabase."
+                    "Falta o Client ID OAuth do Google no build."
                 BuildConfig.JARVIS_AUTH_ENDPOINT.isBlank() ->
                     "Falta configurar o endpoint de autenticação do backend neste build."
                 else ->
-                    "Backend conectado. O login Google está configurado; a primeira conta confirmada pelo servidor poderá ser o proprietário global."
+                    "Cliente OAuth Google incluído. O login depende da validação do token pelo backend."
             }
             textSize = 12f
             setTextColor(Color.rgb(152, 177, 199))
