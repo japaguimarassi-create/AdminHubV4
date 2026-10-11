@@ -208,8 +208,10 @@ object JarvisCommandRouter {
         }
 
         val guess = JarvisLocalBrain.classify(appContext, raw)
-        val learnedIntent = guess.intent.name.lowercase(Locale.ROOT).replace('_', ' ')
-        return "Recebi o comando, mas não vou inventar uma ação. A rede local de 2.678 neurônios classificou como “$learnedIntent”. Você pode pedir uma pesquisa Web ou reformular como abrir, pesquisar, voltar, rolar, digitar ou tocar."
+        return launchWebSearch(
+            appContext,
+            raw + " — pedido não mapeado localmente; categoria estimada: " + guess.intent.name.lowercase(Locale.ROOT).replace('_', ' ')
+        )
     }
 
     private fun globalAction(context: Context, action: String): String {
