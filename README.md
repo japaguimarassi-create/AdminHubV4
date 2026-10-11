@@ -1,38 +1,40 @@
-# Neural HUD 2.0
+# Neural HUD 3.0
 
 <p align="center"><img src="assets/neural-hud-emblem.svg" alt="Neural HUD custom neural-orbit emblem" width="180" /></p>
 
+Neural HUD é um HUD flutuante Android com automação local, ferramentas e edição assistida de arquivos. Não usa API de IA: comandos de edição e ações suportadas são interpretados por regras locais; isso não é um LLM nem inteligência geral.
 
-Neural HUD é um HUD flutuante Android com um interpretador local de instruções. Não usa API de IA: os comandos, sinônimos, regras de acionamento e ações compatíveis já estão implementados no código; as instruções do usuário são guardadas localmente.
-
-## Como funciona
+## HUD e automação
 
 1. Abra o app. Se a permissão de sobreposição ainda não estiver ativa, o Android abre diretamente a página de permissão.
 2. Ao voltar depois de permitir, a esfera e o painel de comandos são iniciados automaticamente.
-3. No campo fixado na parte inferior do painel, escreva o que fazer e toque em **Salvar e ativar instrução**.
-4. Para o HUD executar ações em outros apps, abra **Ativar IA nos aplicativos (Acessibilidade)** e habilite o serviço nas configurações do Android. O Android exige que essa permissão seja concedida manualmente.
-5. Abra o app-alvo. O interpretador verifica o pacote ativo e tenta executar apenas as ações que reconhece.
+3. No campo de comando, escreva o que fazer e toque em **Salvar e ativar instrução**.
+4. Para executar ações em outros apps, habilite o serviço Neural HUD em **Configurações → Acessibilidade**. O Android exige autorização manual.
+5. Abra o app-alvo. O interpretador verifica o pacote ativo e tenta executar somente ações reconhecidas.
 
-## Exemplos de instrução
+Exemplos: `Quando abrir YouTube, pesquise gatos`, `Quando abrir Chrome, digite https://example.com`, `Quando abrir YouTube, role para baixo`. A execução depende dos elementos que o app-alvo expõe à Acessibilidade. Campos de senha são ignorados.
 
-- `Quando abrir YouTube, pesquise gatos`
-- `Quando abrir Chrome, toque em Pesquisar e depois digite tutorial de Python`
-- `Quando abrir Chrome, digite https://example.com`
-- `Quando abrir YouTube, role para baixo`
-- `Quando abrir Chrome, volte`
-- `Pesquise clima no Rio de Janeiro` — sem app-alvo, a instrução roda uma vez no próximo app aberto.
+## Editor de arquivos
 
-Ações locais previstas no código: pesquisar, digitar em campo editável, tocar em texto/controle acessível, voltar, ir à tela inicial, rolar, aguardar e abrir um app instalado. Se não localizar uma caixa de pesquisa acessível, a ação de pesquisa abre a busca Google no navegador.
+Abra **Ferramentas → Editor de arquivos** e selecione um documento pelo seletor nativo do Android. O app não recebe acesso geral ao armazenamento: o usuário escolhe explicitamente o documento e o provedor pode recusar a escrita.
 
-## Limites e privacidade
+- Limite de edição: 512 KiB; apenas conteúdo UTF-8 textual, não arquivos binários.
+- Comandos locais suportados: `substitua X por Y`, `adicionar ao final: texto`, `adicionar no início: texto`, `remover linhas contendo X`, `remover texto: X` e `substitua tudo por: texto`.
+- Também é possível editar o texto manualmente. A proposta e uma prévia são mostradas antes de salvar.
+- Para cada gravação, o original é salvo no armazenamento privado do app. A gravação pede confirmação e o resultado é relido para verificação. A opção **Restaurar último backup** recupera o backup mais recente. O backup fica dentro do armazenamento privado do app; apagar os dados/desinstalar o app remove esses backups.
+- A edição e a interpretação ocorrem localmente. O conteúdo do arquivo não é enviado a uma API.
 
-- Não é um LLM nem possui inteligência geral. É um motor determinístico de linguagem natural limitada, com regras e sinônimos pré-programados.
-- Ações dependem da estrutura de acessibilidade do app-alvo; apps que desenham uma interface própria podem não expor botões/campos e algumas ações podem falhar.
-- O serviço de Acessibilidade não pode ser habilitado silenciosamente pelo app: o usuário precisa ativá-lo nas configurações do Android.
-- Campos identificados como senha são ignorados. O texto digitado no campo de comando e as regras ficam no armazenamento privado do app; não são enviados a uma API.
-- A busca web abre o navegador normal e usa a conexão do dispositivo.
-- O HUD pode ser arrastado, minimizado, pausado e encerrado; tamanho e opacidade são configuráveis.
+## Privacidade e confiança do Android
 
-## Compilar
+- Não é um LLM. O classificador neural local é pequeno; ele não gera código arbitrário e não aprende conhecimentos gerais. O editor aplica apenas as transformações de texto listadas acima.
+- O app usa o seletor do Android para acesso a documentos e declara visibilidade de apps lançáveis, em vez de pedir acesso irrestrito à lista de pacotes.
+- A permissão de sobreposição e o serviço de Acessibilidade são sensíveis. Ative-os apenas se compreender que o HUD pode aparecer sobre outros apps e, quando autorizado, interagir com os elementos acessíveis.
+- A assinatura APK é verificada pelo pipeline. Uma assinatura válida confirma integridade e identidade do assinante, mas **não equivale a certificação do Google Play Protect** nem garante que o Android nunca exibirá alertas. A reputação/avaliação do Play Protect depende também de distribuição, comportamento e análise do Google.
 
-O workflow `.github/workflows/build-apk.yml` compila em runner Linux do GitHub Actions. Abra **Actions → Build Neural HUD APK** e baixe o artefato `neural-hud-debug-apk`. O build usa JDK 17, Gradle 8.9 e Android SDK 35.
+## Compilar e baixar
+
+O workflow `.github/workflows/build-apk.yml` roda em GitHub Actions com JDK 17, Gradle 8.9 e Android SDK 35. Ele sempre compila e verifica o APK `debug`, que tem identificador `com.neuralhud.mobile.debug` e serve para teste.
+
+Para gerar um APK instalável de distribuição com identificador `com.neuralhud.mobile`, configure uma chave privada de release **fora do repositório público** como GitHub Actions Secrets com os nomes `NEURALHUD_KEYSTORE_BASE64`, `NEURALHUD_KEYSTORE_PASSWORD`, `NEURALHUD_KEY_ALIAS` e `NEURALHUD_KEY_PASSWORD`. O workflow só compila e publica `neural-hud-release-apk` quando os quatro segredos estão presentes; então verifica a assinatura com `apksigner` e o identificador do pacote. Nunca comite o arquivo de chave nem valores dos segredos no repositório.
+
+O APK `debug` e o APK `release` têm identificadores diferentes; eles podem coexistir. Para atualizar instalações `release`, use sempre a mesma chave privada e incremente `versionCode`. Perder a chave de release impede atualizações sobre instalações assinadas com ela.
