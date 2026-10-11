@@ -16,14 +16,14 @@ val canSignRelease = listOf(
 
 android {
     namespace = "com.neuralhud.mobile"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.neuralhud.mobile"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 3
-        versionName = "3.0.0"
+        targetSdk = 36
+        versionCode = 4
+        versionName = "4.0.0"
     }
 
     compileOptions {
