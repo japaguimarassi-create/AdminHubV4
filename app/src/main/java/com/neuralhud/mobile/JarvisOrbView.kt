@@ -1,4 +1,4 @@
-package com.neuralhud.mobile
+package com.jarvis.assistant
 
 import android.content.Context
 import android.graphics.Canvas
