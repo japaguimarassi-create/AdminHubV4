@@ -112,7 +112,7 @@ class AppObserverService : AccessibilityService() {
 
     private fun executeSearch(instruction: ParsedInstruction, packageName: String, index: Int, query: String) {
         val root = rootForPackage(packageName)
-        val existingField = root?.let { findEditable(it) }
+        val existingField = root?.let { findSearchableField(it) }
         if (existingField != null && setNodeText(existingField, query)) {
             val submitted = existingField.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
             if (!submitted) root?.let { clickFirstLabel(it, listOf("pesquisar", "search", "buscar", "go", "ir")) }
@@ -127,7 +127,7 @@ class AppObserverService : AccessibilityService() {
         if (clickedSearch) {
             handler.postDelayed({
                 val nextRoot = rootForPackage(packageName)
-                val field = nextRoot?.let { findEditable(it) }
+                val field = nextRoot?.let { findSearchableField(it) }
                 if (field != null && setNodeText(field, query)) {
                     val submitted = field.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id)
                     if (!submitted) nextRoot?.let { clickFirstLabel(it, listOf("pesquisar", "search", "buscar", "go", "ir")) }
@@ -205,6 +205,18 @@ class AppObserverService : AccessibilityService() {
         collectNodes(root, nodes)
         return nodes.firstOrNull { it.isEditable && it.isEnabled && !it.isPassword && it.isVisibleToUser && it.isFocused }
             ?: nodes.firstOrNull { it.isEditable && it.isEnabled && !it.isPassword && it.isVisibleToUser }
+    }
+
+    private fun findSearchableField(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        val nodes = mutableListOf<AccessibilityNodeInfo>()
+        collectNodes(root, nodes)
+        val candidates = nodes.filter { it.isEditable && it.isEnabled && !it.isPassword && it.isVisibleToUser }
+        return candidates.firstOrNull {
+            val label = LocalAutomationEngine.normalize(
+                "${it.hintText ?: ""} ${it.contentDescription ?: ""} ${it.viewIdResourceName ?: ""}"
+            )
+            listOf("pesquisar", "buscar", "search", "query", "procurar").any { token -> token in label }
+        } ?: candidates.firstOrNull { it.isFocused }
     }
 
     private fun setNodeText(node: AccessibilityNodeInfo, text: String): Boolean {
