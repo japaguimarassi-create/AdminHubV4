@@ -208,13 +208,13 @@ class HudOverlayService : Service() {
         }
         val titleBlock = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         titleBlock.addView(TextView(this).apply {
-            text = "NEURAL HUD"
+            text = "J.A.R.V.I.S. • NEURAL HUD"
             textSize = 18f
             setTextColor(Color.rgb(91, 224, 238))
             letterSpacing = 0.06f
         })
         titleBlock.addView(TextView(this).apply {
-            text = "Comandos locais • sem API"
+            text = "2.678 unidades neurais • sem API de IA"
             textSize = 11f
             setTextColor(Color.rgb(180, 200, 214))
         })
