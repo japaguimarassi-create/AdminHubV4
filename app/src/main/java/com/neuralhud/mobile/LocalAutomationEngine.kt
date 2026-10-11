@@ -117,7 +117,7 @@ object LocalAutomationEngine {
     }
 
     private fun cleanArgument(value: String): String =
-        value.trim().trim('"', ''', '“', '”', '‘', '’').trim()
+        value.trim('"', '\'', '“', '”', '‘', '’').trim()
 
     fun onAppOpened(context: Context, packageName: String): ParsedInstruction? {
         if (packageName.isBlank() || packageName == context.packageName ||
