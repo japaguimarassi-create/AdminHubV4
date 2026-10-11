@@ -214,6 +214,8 @@ class TextFileEditorActivity : Activity() {
     }
 
     private fun applyLocalInstruction(source: String, command: String): String {
+        val replaceAll = Regex("(?is)^(?:substitua|substituir)\\s+tudo\\s+por\\s*:\\s*(.*)$").matchEntire(command)
+        if (replaceAll != null) return replaceAll.groupValues[1]
         val replace = Regex("(?is)^(?:substitua|substituir|troque|trocar)\\s+(.+?)\\s+(?:por|para)\\s+(.+)$").matchEntire(command)
         if (replace != null) {
             val old = unquote(replace.groupValues[1])
@@ -246,8 +248,6 @@ class TextFileEditorActivity : Activity() {
             require(source.contains(needle)) { "O texto alvo não foi encontrado no arquivo." }
             return source.replace(needle, "")
         }
-        val replaceAll = Regex("(?is)^(?:substitua|substituir)\\s+tudo\\s+por\\s*:\\s*(.*)$").matchEntire(command)
-        if (replaceAll != null) return replaceAll.groupValues[1]
         throw IllegalArgumentException("Instrução não reconhecida. Use: “substitua X por Y”, “adicionar ao final: texto”, “adicionar no início: texto”, “remover linhas contendo X”, “remover texto: X” ou “substitua tudo por: texto”.")
     }
 
