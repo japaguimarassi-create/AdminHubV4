@@ -3,10 +3,15 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+fun quotedBuildConfig(value: String): String =
+    "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 val releaseStorePath = System.getenv("JARVIS_KEYSTORE_PATH")
 val releaseStorePassword = System.getenv("JARVIS_KEYSTORE_PASSWORD")
 val releaseKeyAlias = System.getenv("JARVIS_KEY_ALIAS")
 val releaseKeyPassword = System.getenv("JARVIS_KEY_PASSWORD")
+val googleWebClientId = System.getenv("JARVIS_GOOGLE_WEB_CLIENT_ID").orEmpty()
+val jarvisAuthEndpoint = System.getenv("JARVIS_AUTH_ENDPOINT").orEmpty()
 val canSignRelease = listOf(
     releaseStorePath,
     releaseStorePassword,
@@ -17,24 +22,21 @@ val canSignRelease = listOf(
 android {
     namespace = "com.jarvis.assistant"
     compileSdk = 36
-
     defaultConfig {
         applicationId = "com.jarvis.assistant"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "7.0.0"
+        versionCode = 8
+        versionName = "8.0.0"
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", quotedBuildConfig(googleWebClientId))
+        buildConfigField("String", "JARVIS_AUTH_ENDPOINT", quotedBuildConfig(jarvisAuthEndpoint))
     }
-
+    buildFeatures { buildConfig = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
+    kotlinOptions { jvmTarget = "17" }
     signingConfigs {
         if (canSignRelease) {
             create("release") {
@@ -45,21 +47,22 @@ android {
             }
         }
     }
-
     buildTypes {
         release {
             isMinifyEnabled = false
-            if (canSignRelease) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            if (canSignRelease) signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            applicationIdSuffix = ".debug7"
+            applicationIdSuffix = ".debug8"
             versionNameSuffix = "-debug"
         }
     }
 }
 
 dependencies {
+    implementation("androidx.credentials:credentials:1.6.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     testImplementation("junit:junit:4.13.2")
 }

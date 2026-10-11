@@ -20,87 +20,93 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ScrollView
+import android.widget.Space
 import android.widget.TextView
 import java.util.Locale
 
 class JarvisVoiceInteractionSession(private val host: Context) : VoiceInteractionSession(host) {
     private var input: EditText? = null
     private var status: TextView? = null
-    private var listenButton: Button? = null
-    private var recognizer: SpeechRecognizer? = null
     private var orb: JarvisOrbView? = null
+    private var listenButton: Button? = null
+    private var executeButton: Button? = null
+    private var loginButton: Button? = null
+    private var recognizer: SpeechRecognizer? = null
     private var speaker: TextToSpeech? = null
     private var speakerReady = false
+    private var pendingCommand: String? = null
+    private var busySpeaking = false
 
     override fun onCreateContentView(): View {
         val page = LinearLayout(host).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(16), dp(18), dp(16))
-            background = rounded(Color.rgb(13, 22, 33), Color.rgb(68, 117, 138))
-            elevation = dp(16).toFloat()
+            setPadding(dp(18), dp(14), dp(18), dp(12))
+            background = rounded(Color.rgb(7, 10, 18), Color.rgb(43, 92, 127))
+            elevation = dp(18).toFloat()
         }
-
         page.addView(TextView(host).apply {
             text = "J.A.R.V.I.S."
-            textSize = 23f
-            setTextColor(Color.rgb(91, 224, 238))
+            textSize = 22f
+            setTextColor(Color.rgb(229, 245, 255))
         })
         page.addView(TextView(host).apply {
-            text = "Assistente pessoal • comandos locais e Web"
-            textSize = 12f
-            setTextColor(Color.rgb(174, 194, 207))
-            setPadding(0, dp(3), 0, dp(12))
+            text = "ASSISTENTE DO SISTEMA"
+            textSize = 8f
+            letterSpacing = 0.17f
+            setTextColor(Color.rgb(75, 210, 255))
+            setPadding(0, dp(3), 0, dp(10))
         })
-
         status = TextView(host).apply {
-            text = "Assistente global ativado. Preparando reconhecimento de voz offline…"
+            text = "Preparando o assistente…"
             textSize = 13f
-            setTextColor(Color.WHITE)
-            setPadding(dp(10), dp(10), dp(10), dp(10))
-            background = rounded(Color.rgb(20, 32, 43), Color.rgb(37, 65, 80))
+            setTextColor(Color.rgb(229, 238, 247))
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            background = rounded(Color.rgb(17, 22, 33), Color.rgb(37, 66, 88))
             minHeight = dp(52)
         }
-        page.addView(status, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
-
+        page.addView(status, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
         input = EditText(host).apply {
-            hint = "Fale ou digite qualquer instrução"
-            setHintTextColor(Color.rgb(145, 167, 181))
+            hint = "Transcrição ou comando"
+            setHintTextColor(Color.rgb(118, 142, 165))
             setTextColor(Color.WHITE)
-            textSize = 15f
-            minLines = 2
-            maxLines = 4
-            gravity = Gravity.TOP or Gravity.START
-            setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = rounded(Color.rgb(23, 36, 48), Color.rgb(44, 78, 95))
+            textSize = 14f
+            minLines = 1
+            maxLines = 3
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(12), dp(9), dp(12), dp(9))
+            background = rounded(Color.rgb(15, 25, 40), Color.rgb(40, 83, 112))
         }
-        page.addView(input, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
-
-        listenButton = addButton(page, "Ouvir offline") { startListening() }
-        addButton(page, "Executar comando") {
-            val text = input?.text?.toString().orEmpty()
-            val result = JarvisCommandRouter.execute(host, text)
-            executeCommand(text)
+        page.addView(input, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) })
+        executeButton = addButton(page, "Confirmar e executar") {
+            executeCommand(pendingCommand ?: input?.text?.toString().orEmpty())
         }
-        addButton(page, "Fechar assistente") {
-            stopListening()
-            hide()
+        listenButton = addButton(page, "Tentar ouvir novamente") { startListening() }
+        loginButton = addButton(page, "Abrir login do J.A.R.V.I.S.") {
+            host.startActivity(Intent(host, LoginActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
-
-        val footer = TextView(host).apply {
-            text = "O reconhecimento por voz só funciona offline quando o Android disponibiliza um modelo local. Perguntas que exigem fatos recentes podem abrir o navegador."
-            textSize = 11f
-            setTextColor(Color.rgb(145, 167, 181))
-            setPadding(0, dp(10), 0, 0)
+        addButton(page, "Cancelar / limpar comando") {
+            pendingCommand = null
+            input?.setText("")
+            status?.text = "Comando cancelado. Nenhuma ação foi executada."
+            orb?.mode = OrbMode.IDLE
+            executeButton?.isEnabled = false
         }
-        page.addView(footer)
+        loginButton?.visibility = if (JarvisAuthState.hasAccess(host)) View.GONE else View.VISIBLE
+        page.addView(Space(host), LinearLayout.LayoutParams(1, 0, 1f))
         orb = JarvisOrbView(host).apply {
-            contentDescription = "Esfera de voz J.A.R.V.I.S."
+            contentDescription = "Esfera de voz do J.A.R.V.I.S."
             setOnClickListener { startListening() }
         }
         page.addView(orb, LinearLayout.LayoutParams(dp(96), dp(96)).apply {
             gravity = Gravity.CENTER_HORIZONTAL
-            topMargin = dp(2)
+            topMargin = dp(3)
+        })
+        page.addView(TextView(host).apply {
+            text = "Comandos ambíguos exigem confirmação antes da execução."
+            textSize = 10f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(113, 151, 181))
+            setPadding(0, dp(5), 0, 0)
         })
         initializeSpeaker()
         return page
@@ -108,30 +114,102 @@ class JarvisVoiceInteractionSession(private val host: Context) : VoiceInteractio
 
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
-        status?.text = "J.A.R.V.I.S. pronto. Estou ouvindo sua instrução."
+        if (!JarvisAuthState.hasAccess(host)) {
+            status?.text = "Entre no J.A.R.V.I.S. primeiro. Nenhum comando será executado antes da configuração inicial."
+            loginButton?.visibility = View.VISIBLE
+            executeButton?.isEnabled = false
+            listenButton?.isEnabled = false
+            return
+        }
+        status?.text = "Fale uma instrução. Vou mostrar o que entendi antes de executar."
+        loginButton?.visibility = View.GONE
+        executeButton?.isEnabled = false
+        listenButton?.isEnabled = true
         startListening()
     }
 
     override fun onHide() {
         stopListening()
+        stopSpeaker()
         super.onHide()
     }
 
     override fun onDestroy() {
         stopListening()
-        try { speaker?.stop() } catch (_: Exception) {}
+        stopSpeaker()
         try { speaker?.shutdown() } catch (_: Exception) {}
         speaker = null
         super.onDestroy()
     }
 
+    private fun receiveTranscript(text: String, confidence: Float?) {
+        val transcript = JarvisCommandInterpreter.normalizeTranscript(text)
+        if (transcript.isBlank()) {
+            status?.text = "Não recebi uma transcrição legível. Tente falar mais devagar."
+            orb?.mode = OrbMode.IDLE
+            return
+        }
+        if (confidence != null && confidence in 0f..1f && confidence < 0.42f) {
+            status?.text = "Baixa confiança na transcrição. Ouvi: " + text + ". Não vou executar; repita ou edite."
+            input?.setText(text)
+            pendingCommand = null
+            executeButton?.isEnabled = false
+            orb?.mode = OrbMode.IDLE
+            speak(status?.text.toString(), false)
+            return
+        }
+        val pending = pendingCommand
+        if (pending != null) {
+            when (transcript) {
+                "confirmar", "confirma", "pode executar", "executar", "isso mesmo", "correto" -> {
+                    executeCommand(pending)
+                    return
+                }
+                "cancelar", "cancele", "nao", "não", "pare", "parar" -> {
+                    pendingCommand = null
+                    input?.setText("")
+                    executeButton?.isEnabled = false
+                    status?.text = "Comando cancelado. Nenhuma ação foi executada."
+                    speak("Comando cancelado.", false)
+                    return
+                }
+            }
+        }
+        val intent = JarvisCommandInterpreter.classify(text)
+        if (intent.kind == JarvisIntentKind.UNKNOWN) {
+            pendingCommand = null
+            input?.setText(text)
+            executeButton?.isEnabled = false
+            status?.text = "Não reconheci isso como um comando suportado. Nada foi executado. Reformule ou diga “pesquise na Web ...”."
+            orb?.mode = OrbMode.IDLE
+            speak("Não reconheci essa instrução com segurança. Não executei nenhuma ação.", false)
+            return
+        }
+        pendingCommand = text.trim()
+        input?.setText(text.trim())
+        input?.setSelection(input?.text?.length ?: 0)
+        executeButton?.isEnabled = true
+        status?.text = "Entendi: " + text.trim() + ". Diga confirmar para executar ou cancelar para parar."
+        speak("Entendi: " + text.trim() + ". Diga confirmar para executar ou cancelar para parar.", true)
+    }
 
     private fun executeCommand(text: String) {
         if (text.isBlank()) {
-            status?.text = "Digite uma instrução ou toque na esfera para falar."
+            status?.text = "Fale uma instrução ou digite no campo."
             return
         }
+        val intent = JarvisCommandInterpreter.classify(text)
+        if (intent.kind == JarvisIntentKind.UNKNOWN) {
+            status?.text = "Não reconheci essa instrução. Nenhuma ação foi executada."
+            pendingCommand = null
+            executeButton?.isEnabled = false
+            orb?.mode = OrbMode.IDLE
+            return
+        }
+        pendingCommand = null
+        executeButton?.isEnabled = false
         stopListening()
+        orb?.mode = OrbMode.PROCESSING
         val result = try {
             JarvisCommandRouter.execute(host, text)
         } catch (e: Exception) {
@@ -139,59 +217,75 @@ class JarvisVoiceInteractionSession(private val host: Context) : VoiceInteractio
         }
         status?.text = result
         LocalAutomationEngine.setStatus(host, result)
-        if (speakerReady) {
-            orb?.mode = OrbMode.SPEAKING
-            speaker?.speak(result, TextToSpeech.QUEUE_FLUSH, null, "jarvis-session-" + System.currentTimeMillis())
-        } else orb?.mode = OrbMode.IDLE
+        speak(result, false)
     }
 
     private fun initializeSpeaker() {
         speaker = TextToSpeech(host) { result ->
-            if (result == TextToSpeech.SUCCESS) {
-                val tts = speaker
-                if (tts != null) {
-                    speakerReady = true
-                    tts.language = Locale("pt", "BR")
-                    tts.setSpeechRate(0.91f)
-                    tts.setPitch(0.94f)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        val voice = tts.voices?.filter { it.locale.language == "pt" && !it.isNetworkConnectionRequired }?.maxByOrNull { it.quality }
-                        if (voice != null) tts.voice = voice
-                        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                            override fun onStart(utteranceId: String?) {
-                                orb?.post { orb?.mode = OrbMode.SPEAKING }
-                            }
-                            override fun onDone(utteranceId: String?) {
-                                orb?.post { orb?.mode = OrbMode.IDLE }
-                            }
-                            @Deprecated("Deprecated in Java")
-                            override fun onError(utteranceId: String?) {
-                                orb?.post { orb?.mode = OrbMode.IDLE }
-                            }
-                            override fun onError(utteranceId: String?, errorCode: Int) {
-                                orb?.post { orb?.mode = OrbMode.IDLE }
-                            }
-                        })
+            if (result != TextToSpeech.SUCCESS) return@TextToSpeech
+            val tts = speaker ?: return@TextToSpeech
+            speakerReady = true
+            tts.language = Locale("pt", "BR")
+            tts.setSpeechRate(0.92f)
+            tts.setPitch(0.96f)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val voice = tts.voices
+                    ?.filter { it.locale.language == "pt" && !it.isNetworkConnectionRequired }
+                    ?.maxByOrNull { it.quality }
+                if (voice != null) tts.voice = voice
+                tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) {
+                        orb?.post { busySpeaking = true; orb?.mode = OrbMode.SPEAKING }
                     }
-                }
+                    override fun onDone(utteranceId: String?) {
+                        orb?.post {
+                            busySpeaking = false
+                            orb?.mode = OrbMode.IDLE
+                            if (pendingCommand != null && JarvisAuthState.hasAccess(host)) startListening()
+                        }
+                    }
+                    @Deprecated("Deprecated in Java")
+                    override fun onError(utteranceId: String?) {
+                        orb?.post { busySpeaking = false; orb?.mode = OrbMode.IDLE }
+                    }
+                    override fun onError(utteranceId: String?, errorCode: Int) {
+                        orb?.post { busySpeaking = false; orb?.mode = OrbMode.IDLE }
+                    }
+                })
             }
         }
     }
 
+    private fun speak(text: String, listenAfter: Boolean) {
+        if (!speakerReady || text.isBlank()) {
+            orb?.mode = OrbMode.IDLE
+            if (listenAfter && pendingCommand != null) startListening()
+            return
+        }
+        busySpeaking = true
+        orb?.mode = OrbMode.SPEAKING
+        speaker?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis-global-" + System.currentTimeMillis())
+    }
+
     private fun startListening() {
-        val field = input ?: return
+        if (!JarvisAuthState.hasAccess(host)) {
+            status?.text = "Entre no app antes de usar o assistente global."
+            loginButton?.visibility = View.VISIBLE
+            return
+        }
+        if (busySpeaking) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            status?.text = "Este Android não oferece reconhecimento offline compatível. Digite o comando."
+            status?.text = "O reconhecimento offline exige Android 12 ou superior. Você pode digitar o comando."
             orb?.mode = OrbMode.IDLE
             return
         }
         if (host.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            status?.text = "Permita o microfone nas informações do aplicativo. Você ainda pode digitar o comando."
+            status?.text = "Permita o microfone nas informações do app. A transcrição digitada continua disponível."
             orb?.mode = OrbMode.IDLE
             return
         }
         if (!SpeechRecognizer.isOnDeviceRecognitionAvailable(host)) {
-            status?.text = "Não há reconhecedor offline instalado. Digite a instrução."
+            status?.text = "Não há modelo de fala offline instalado. Instale o pacote Português (Brasil) do reconhecedor ou digite."
             orb?.mode = OrbMode.IDLE
             return
         }
@@ -199,66 +293,57 @@ class JarvisVoiceInteractionSession(private val host: Context) : VoiceInteractio
         try {
             val speech = SpeechRecognizer.createOnDeviceSpeechRecognizer(host)
             recognizer = speech
+            listenButton?.text = "Ouvindo…"
+            orb?.mode = OrbMode.LISTENING
+            status?.text = if (pendingCommand == null) "Estou ouvindo uma instrução…" else "Aguardando confirmar ou cancelar…"
             speech.setRecognitionListener(object : RecognitionListener {
-                override fun onReadyForSpeech(params: Bundle?) {
-                    status?.text = "Estou ouvindo. Fale naturalmente."
-                    listenButton?.text = "Ouvindo…"
-                    orb?.mode = OrbMode.LISTENING
-                }
-                override fun onBeginningOfSpeech() {
-                    status?.text = "Reconhecendo fala no dispositivo…"
-                    orb?.mode = OrbMode.LISTENING
-                }
+                override fun onReadyForSpeech(params: Bundle?) { orb?.mode = OrbMode.LISTENING }
+                override fun onBeginningOfSpeech() { orb?.mode = OrbMode.LISTENING }
                 override fun onRmsChanged(rmsdB: Float) { orb?.setAudioLevel(rmsdB) }
                 override fun onBufferReceived(buffer: ByteArray?) {}
-                override fun onEndOfSpeech() {
-                    status?.text = "Processando fala no dispositivo…"
-                }
+                override fun onEndOfSpeech() { status?.text = "Entendendo a fala…" }
                 override fun onError(error: Int) {
-                    listenButton?.text = "Tentar ouvir novamente"
-                    status?.text = "O reconhecimento offline falhou (código $error). Você pode tentar de novo ou digitar o comando."
                     releaseRecognizer()
+                    listenButton?.text = "Tentar ouvir novamente"
+                    status?.text = if (pendingCommand == null) {
+                        "O reconhecimento falhou (código " + error + "). Tente novamente ou digite."
+                    } else {
+                        "Comando preparado: toque em Confirmar e executar ou tente falar confirmar."
+                    }
+                    orb?.mode = OrbMode.IDLE
                 }
                 override fun onResults(results: Bundle?) {
-                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    val transcript = matches?.firstOrNull().orEmpty()
+                    val spoken = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+                    val score = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)?.firstOrNull()
                     releaseRecognizer()
-                    if (transcript.isNotBlank()) {
-                        field.setText(transcript)
-                        field.setSelection(field.text.length)
-                        executeCommand(transcript)
-                    } else {
-                        status?.text = "Não consegui entender a fala. Tente novamente ou digite."
-                        orb?.mode = OrbMode.IDLE
-                    }
-                    listenButton?.text = "Ouvir offline"
+                    listenButton?.text = "Tentar ouvir novamente"
+                    receiveTranscript(spoken, score)
                 }
                 override fun onPartialResults(partialResults: Bundle?) {
-                    val transcript = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                    if (!transcript.isNullOrBlank()) status?.text = transcript
+                    val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                    if (!partial.isNullOrBlank()) status?.text = partial
                 }
                 override fun onEvent(eventType: Int, params: Bundle?) {}
             })
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            speech.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
                 putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            }
-            speech.startListening(intent)
+            })
         } catch (e: Exception) {
             releaseRecognizer()
             orb?.mode = OrbMode.IDLE
-            status?.text = "Não consegui iniciar o reconhecedor offline: ${e.message ?: e.javaClass.simpleName}. Digite o comando."
+            status?.text = "Não consegui iniciar a voz offline: " + (e.message ?: e.javaClass.simpleName)
         }
     }
 
     private fun stopListening() {
         try { recognizer?.stopListening() } catch (_: Exception) {}
         releaseRecognizer()
-        listenButton?.text = "Ouvir offline"
-        if (orb?.mode == OrbMode.LISTENING) orb?.mode = OrbMode.IDLE
+        listenButton?.text = "Tentar ouvir novamente"
+        if (!busySpeaking) orb?.mode = OrbMode.IDLE
     }
 
     private fun releaseRecognizer() {
@@ -267,24 +352,29 @@ class JarvisVoiceInteractionSession(private val host: Context) : VoiceInteractio
         recognizer = null
     }
 
+    private fun stopSpeaker() {
+        busySpeaking = false
+        try { speaker?.stop() } catch (_: Exception) {}
+    }
+
     private fun addButton(parent: LinearLayout, label: String, action: () -> Unit): Button {
         val button = Button(host).apply {
             text = label
             isAllCaps = false
-            textSize = 14f
-            minHeight = dp(46)
-            setTextColor(Color.WHITE)
-            background = rounded(Color.rgb(34, 51, 65), Color.rgb(56, 86, 104))
+            textSize = 13f
+            minHeight = dp(42)
+            setTextColor(Color.rgb(230, 242, 252))
+            background = rounded(Color.rgb(19, 31, 47), Color.rgb(45, 87, 116))
             setOnClickListener { action() }
         }
-        parent.addView(button, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(5) })
+        parent.addView(button, LinearLayout.LayoutParams(-1, dp(44)).apply { topMargin = dp(4) })
         return button
     }
 
     private fun rounded(fill: Int, stroke: Int) = GradientDrawable().apply {
         shape = GradientDrawable.RECTANGLE
         setColor(fill)
-        cornerRadius = dp(14).toFloat()
+        cornerRadius = dp(15).toFloat()
         setStroke(dp(1), stroke)
     }
 

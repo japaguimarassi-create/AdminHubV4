@@ -1,43 +1,40 @@
-# J.A.R.V.I.S. 7.0.0
+# J.A.R.V.I.S. 8.0.0
 
-Assistente Android nativo com identidade visual própria, esfera de voz animada, entrada como assistente do sistema, comandos e memória locais, e pesquisa Web dentro do próprio aplicativo.
+Aplicativo Android com tela de login inicial, interface de conversa, histórico local, esfera de voz e integração como assistente do sistema. A lógica local usa classificação determinística e comandos Android; consultas Web são explícitas e executadas numa WebView interna.
 
-## O que foi refeito
+## Reconstrução desta versão
 
-- Identidade do app, ícone e interface com a marca J.A.R.V.I.S.
-- Tela principal com histórico de instruções, campo de comando e esfera inferior azul/ciano/violeta.
-- A esfera pulsa de forma uniforme em todas as direções durante escuta, processamento e fala.
-- Voz de saída pelo sintetizador instalado no Android, priorizando uma voz portuguesa local quando disponível.
-- Reconhecimento local em pt-BR quando o Android tem modelo offline instalado.
-- Pesquisa Web interna, sem abrir navegador externo nas pesquisas do roteador.
-- WebView limitada a HTTPS, JavaScript desativado, acesso a arquivos/conteúdo local desativado e conteúdo misto bloqueado.
-- Núcleo local para intenções, comandos do sistema, aplicativos, cálculos, notas e macros.
-- APK compilado e verificado pelo GitHub Actions.
+- A primeira tela agora é o login. O botão Google usa Android Credential Manager e envia o token de identidade ao endpoint HTTPS configurado para validação real.
+- O backend Supabase de referência está em supabase/functions/jarvis-auth/index.ts. A migração supabase/migrations/20261011000000_jarvis_global_owner.sql define o primeiro proprietário com uma operação atômica no banco; o papel nunca é eleito por preferência local do aplicativo.
+- A UI principal tem conversas locais, histórico lateral e campo de mensagens estilo chat.
+- A invocação do assistente Android usa uma esfera azul/ciano/violeta na parte inferior. A animação pulsa uniformemente.
+- A transcrição da voz passa por classificação e confirmação antes da execução. Comandos ambíguos não são encaminhados automaticamente à Web nem disparam ações.
+- As conversas permanecem no dispositivo. Pesquisa Web abre dentro do aplicativo.
+- A acessibilidade permanece opcional e deve ser habilitada manualmente nas configurações do Android.
+
+## Configurar login Google real
+
+Este repositório ainda não tem projeto Supabase provisionado nem cliente OAuth configurado. Sem esses recursos, o botão Google informa a pendência em vez de simular autenticação.
+
+Para habilitar a autenticação global:
+
+1. Configure um projeto Supabase e aplique o SQL da pasta supabase/migrations.
+2. Configure os segredos da função Edge: GOOGLE_WEB_CLIENT_ID, SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY. Nunca compile a service role key no APK.
+3. Publique supabase/functions/jarvis-auth.
+4. Crie um OAuth Client ID da Web no Google Auth Platform e configure o cliente Android com package name e fingerprint do certificado de assinatura que será usado.
+5. Nas variáveis do GitHub Actions, defina JARVIS_GOOGLE_WEB_CLIENT_ID e JARVIS_AUTH_ENDPOINT (URL HTTPS de /functions/v1/jarvis-auth) antes de gerar o APK final.
+6. Use assinatura estável para builds que precisem funcionar com o cliente Android do Google. Um APK debug assinado por uma chave efêmera do runner não é adequado para uma configuração OAuth Android permanente.
+
+A função valida assinatura, emissor, audiência, expiração e nonce do token Google no servidor. A regra do primeiro proprietário é garantida por uma linha singleton e inserção atômica no PostgreSQL. O modo local não cria proprietário global.
+
+## Comandos e confiabilidade
+
+A voz offline depende de microfone permitido e do modelo Português (Brasil) instalado no reconhecedor do Android. Quando a transcrição tem baixa confiança, o app pede repetição. Caso o comando reconhecido seja válido, ele fica pendente até confirmação por voz ("confirmar") ou pelo botão. "Cancelar" descarta-o.
+
+O classificador local e o parser não são um LLM generativo. Eles reconhecem um conjunto de comandos e perguntas; frases fora desse conjunto recebem solicitação de reformulação em vez de executar uma ação aleatória. A pesquisa Web é explícita.
+
+A automação entre aplicativos exige ativação manual de Acessibilidade e só pode operar controles que o Android exponha. Jogos baseados em canvas podem não expor elementos clicáveis. O projeto não injeta código em jogos nem garante ações automáticas universais.
 
 ## Compilar
 
-O GitHub Actions gera um APK de depuração a cada push para `main`. O pacote debug é `com.jarvis.assistant.debug7`; o pacote de release é `com.jarvis.assistant`.
-
-1. Abra a aba **Actions** do repositório.
-2. Abra a execução mais recente com conclusão bem-sucedida de **Build J.A.R.V.I.S. APK**.
-3. Em **Artifacts**, baixe `jarvis-android-debug-apk`.
-
-O APK debug usa assinatura de teste do CI; não é um APK Play Store com chave de release permanente.
-
-## Assistente padrão e automação
-
-Toque em **Assistente padrão** e confirme no seletor Android, se o sistema oferecer. A elegibilidade e o gesto de invocação dependem do fabricante.
-
-Para automação entre aplicativos, ative manualmente o serviço em **Configurações → Acessibilidade**. O Android pode restringir a ativação para APKs instalados por download; nas informações do app, procure o menu `⋮` e **Permitir configurações restritas**. Conceda acessibilidade somente se confiar no app.
-
-## Limites reais
-
-O núcleo de 2.678 unidades ocultas é um classificador de intenções, não um grande modelo de linguagem generativo. Aumentar a contagem de unidades não transforma automaticamente esse classificador em IA de raciocínio geral. Pedidos não tratados localmente podem ser pesquisados na Web, enviando a consulta ao DuckDuckGo.
-
-Login Google real e a regra de que o primeiro e-mail registrado globalmente será proprietário exigem um OAuth Client ID configurado e um backend com banco de dados e regra atômica para eleger o primeiro proprietário. Esses itens não estão configurados no projeto atual; este APK não simula autenticação nem propriedade global.
-
-Automação de jogos não é universal. Interfaces gráficas desenhadas em canvas, incluindo partes de jogos Roblox, podem não expor seus elementos à acessibilidade. Este projeto não injeta código, não contorna anticheat e não garante jogar automaticamente por alguém.
-
-## Privacidade
-
-Comandos e notas são locais. A pesquisa Web transmite o termo pesquisado ao mecanismo de busca. A voz depende do sintetizador de fala instalado. Microfone e acessibilidade exigem permissões explícitas. A WebView bloqueia JavaScript e acesso a arquivos locais.
+O GitHub Actions constrói o APK com pacote com.jarvis.assistant.debug8, executa testes unitários e valida a assinatura. O APK de depuração usa assinatura de teste do CI, não uma chave de distribuição permanente.

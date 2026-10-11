@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">J.A.R.V.I.S.</string>
-    <string name="accessibility_description">Automação opcional do J.A.R.V.I.S. Pode observar a interface ativa e executar instruções definidas pelo usuário somente depois que o serviço for ativado manualmente. Campos de senha são ignorados. Não envia comandos a uma API de IA e não executa código arbitrário.</string>
+    <string name="accessibility_description">Automação opcional do J.A.R.V.I.S. Pode observar a interface ativa e executar comandos somente após ativação manual pelo usuário. Campos de senha são ignorados. Instruções ambíguas não são executadas automaticamente.</string>
 </resources>

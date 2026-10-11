@@ -327,12 +327,7 @@ object JarvisCommandRouter {
             return launchWebSearch(appContext, raw)
         }
 
-        val guess = JarvisLocalBrain.classify(appContext, raw)
-        LocalAutomationEngine.setStatus(
-            appContext,
-            "Pedido não mapeado como ação local. Categoria estimada pelo classificador: " + guess.intent.name.lowercase(Locale.ROOT).replace('_', ' ') + ". Abrindo pesquisa Web."
-        )
-        return launchWebSearch(appContext, raw)
+        return "Não reconheci essa instrução como comando seguro. Nenhuma ação foi executada. Reformule o pedido ou diga explicitamente “pesquise na Web ...” para consultar a Internet."
     }
 
     private fun serializeAction(action: LocalAction): String = when (action.type) {
@@ -515,7 +510,7 @@ object JarvisCommandRouter {
         value in setOf("que dia e hoje", "qual a data de hoje", "data de hoje", "data", "diga a data", "today date", "today's date")
 
     private fun startsWithQuestion(value: String): Boolean =
-        listOf("o que ", "que e ", "quem ", "como ", "por que ", "porque ", "quando ", "onde ", "qual ", "quanto ", "me explique ", "explique ", "tell me ", "what ", "who ", "why ", "how ").any { value.startsWith(it) }
+        listOf("o que ", "que e ", "quem ", "como ", "por que ", "porque ", "quando ", "onde ", "qual ", "quais ", "quanto ", "me explique ", "me explica ", "explique ", "conte sobre ", "me fale sobre ", "tell me ", "what ", "who ", "why ", "how ").any { value.startsWith(it) }
 
     private fun cleanAppName(value: String): String =
         value.trim().trimEnd('.', '?', '!', ',')
