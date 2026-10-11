@@ -61,7 +61,7 @@ class ToolboxActivity : Activity() {
             setHintTextColor(Color.rgb(145, 167, 181))
             setTextColor(Color.WHITE)
             textSize = 15f
-            singleLine = true
+            setSingleLine(true)
             setPadding(dp(12), dp(8), dp(12), dp(8))
             background = rounded(Color.rgb(23, 36, 48), Color.rgb(44, 78, 95))
         }
