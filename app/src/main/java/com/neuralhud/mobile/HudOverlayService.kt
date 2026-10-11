@@ -257,7 +257,7 @@ class HudOverlayService : Service() {
             y = (bubbleParams.y + dp(68)).coerceAtMost(resources.displayMetrics.heightPixels - dp(220))
         }
         try {
-            windowManager.addView(root, panelParams)
+            windowManager.addView(root, panelParams!!)
         } catch (e: Exception) {
             panel = null
             Toast.makeText(this, "Não foi possível abrir o painel.", Toast.LENGTH_SHORT).show()
