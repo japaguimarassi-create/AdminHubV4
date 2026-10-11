@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.pm.ServiceInfo
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -39,7 +40,7 @@ class HudOverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(71, buildNotification())
+        if (Build.VERSION.SDK_INT >= 34) {\n            startForeground(71, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)\n        } else {\n            startForeground(71, buildNotification())\n        }
         if (!Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "Permissão de sobreposição necessária.", Toast.LENGTH_LONG).show()
             stopSelf()
