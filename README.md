@@ -1,19 +1,20 @@
-# J.A.R.V.I.S. + Neural HUD 5.0.0
+# J.A.R.V.I.S. + Neural HUD 6.0.0
 
 <p align="center"><img src="assets/neural-hud-emblem.svg" alt="Símbolo J.A.R.V.I.S. Neural HUD" width="160" /></p>
 
-Assistente Android local com HUD flutuante, comandos, memória de macros e tentativa de integração com o assistente padrão do sistema. O motor de comandos e o classificador rodam no dispositivo e não chamam API de IA.
+Assistente Android local com HUD flutuante, entrada como Assist do sistema, comando de voz offline quando suportado, memória de macros e planos multi-etapas. O roteador e o classificador rodam no dispositivo e não chamam API de IA.
 
 ## Como invocar globalmente
 
 1. Instale o APK e abra **J.A.R.V.I.S.**.
-2. Conceda **Exibir sobre outros apps** se quiser a esfera flutuante.
-3. Toque em **Definir J.A.R.V.I.S. como assistente** e confirme na janela de papéis do Android.
-4. Conceda o microfone apenas se desejar tentar voz.
-5. Em Configurações do telefone, escolha o gesto/botão de Assistente para invocar J.A.R.V.I.S. globalmente. Esse gesto depende do fabricante e do Android.
-6. Para executar ações dentro de outros aplicativos, ative manualmente o serviço J.A.R.V.I.S. em **Configurações → Acessibilidade**.
+2. Toque em **Definir J.A.R.V.I.S. como assistente** e confirme, se o Android oferecer essa escolha.
+3. O app também declara um manipulador de `android.intent.action.ASSIST`; se o fabricante usar esse caminho, o comando será aberto numa tela própria com entrada de texto e voz offline.
+4. Conceda **Exibir sobre outros apps** se quiser a esfera flutuante.
+5. Conceda o microfone apenas quando quiser usar voz. Você pode habilitá-lo no app de configuração ou tocar em **Ouvir offline** na tela de Assist.
+6. Em Configurações do telefone, escolha o gesto/botão de Assistente para invocar J.A.R.V.I.S. Esse gesto depende do fabricante e da versão do Android.
+7. Para interagir com controles dentro de outros aplicativos, ative manualmente o serviço J.A.R.V.I.S. em **Configurações → Acessibilidade**.
 
-A integração usa as APIs oficiais `RoleManager.ROLE_ASSISTANT`, `VoiceInteractionService` e `VoiceInteractionSessionService`. O Android precisa disponibilizar o papel de assistente e o usuário precisa consentir. O app não consegue assumir essa função silenciosamente.
+A integração declara um `VoiceInteractionService`, sua `VoiceInteractionSessionService` e um manipulador de `Intent.ACTION_ASSIST`. O Android define os requisitos finais de elegibilidade e o usuário precisa confirmar qualquer mudança de assistente padrão. A existência dessas declarações não garante que todo fabricante exiba J.A.R.V.I.S. no seletor ou use o mesmo gesto de invocação.
 
 **Voz offline:** a sessão tenta usar o reconhecedor de voz *no dispositivo* para `pt-BR`. Funciona apenas quando o sistema tem um provedor/modelo local compatível instalado e o microfone foi permitido. Se não houver reconhecimento local, o comando digitado continua disponível. Não há uma palavra de ativação contínua tipo “Hey JARVIS” implementada nesta versão.
 
@@ -39,7 +40,7 @@ A memória permite cadastrar até 100 atalhos locais que disparam ações que o 
 ensine abrir aula => abra YouTube
 ```
 
-Depois, escrever **abrir aula** executa a ação ensinada. Também é possível usar `aprenda frase => ação` ou `memorize frase => ação`. O classificador local recebe feedback dessa associação e as macros ficam no armazenamento privado do aplicativo. Uma macro não dá capacidades novas ao Android: ela só encaminha para comandos já suportados. Para evitar ciclos, os atalhos encadeados têm profundidade limitada.
+Depois, escrever **abrir aula** executa a ação ensinada. Também é possível usar `aprenda frase => ação` ou `memorize frase => ação`. O classificador local recebe feedback dessa associação e as macros ficam no armazenamento privado do aplicativo. Uma macro não dá capacidades novas ao Android: ela só encaminha para comandos já suportados. Para evitar ciclos, os atalhos encadeados têm profundidade limitada. Planos que começam abrindo outro app podem executar as etapas seguintes depois que a mudança de tela for detectada. A sequência para se o app não puder ser identificado, um controle estiver inacessível ou uma ação falhar.
 
 ## O que significa “2.678 neurônios”
 
@@ -69,7 +70,7 @@ Quando um pedido não corresponde a uma ação local segura, o app abre uma pesq
 
 O workflow `.github/workflows/build-apk.yml` compila com JDK 17, Gradle 8.11.1, Android Gradle Plugin 8.10.1 e SDK/API 36. Antes de gerar o APK, executa testes unitários do interpretador, verifica a configuração e executa `apksigner`.
 
-- **Debug:** pacote `com.neuralhud.mobile.debug`, para teste.
+- **Debug:** pacote `com.neuralhud.mobile.debug6`, para teste e instalação paralela à versão 5.
 - **Release:** pacote `com.neuralhud.mobile`, produzido apenas se os segredos de assinatura estiverem configurados.
 
 Segredos esperados em **Settings → Secrets and variables → Actions**: `NEURALHUD_KEYSTORE_BASE64`, `NEURALHUD_KEYSTORE_PASSWORD`, `NEURALHUD_KEY_ALIAS` e `NEURALHUD_KEY_PASSWORD`. Preserve a chave privada e nunca a comite no repositório público.
