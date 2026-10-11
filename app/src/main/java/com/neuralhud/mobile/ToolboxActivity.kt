@@ -81,6 +81,9 @@ class ToolboxActivity : Activity() {
         addButton(content, "Ensinar categoria: HUD") { train(3) }
         addButton(content, "Ensinar categoria: aprendizado") { train(4) }
         addButton(content, "Ensinar categoria: problema") { train(5) }
+        addButton(content, "Editor de arquivos: modificar com IA local") {
+            startActivity(Intent(this, TextFileEditorActivity::class.java))
+        }
         addButton(content, "Selecionar arquivo para inspecionar") {
             val picker = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
