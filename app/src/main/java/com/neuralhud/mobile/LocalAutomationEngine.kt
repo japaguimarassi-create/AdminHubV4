@@ -7,7 +7,7 @@ import java.text.Normalizer
 import java.util.Locale
 
 enum class LocalActionType {
-    SEARCH, TYPE_TEXT, CLICK_TEXT, BACK, HOME, SCROLL_DOWN, SCROLL_UP, OPEN_APP, WAIT
+    SEARCH, TYPE_TEXT, CLICK_TEXT, BACK, HOME, ENTER, SCROLL_DOWN, SCROLL_UP, OPEN_APP, WAIT
 }
 
 data class LocalAction(val type: LocalActionType, val argument: String = "")
@@ -79,6 +79,9 @@ object LocalAutomationEngine {
         if (Regex("^(volte|voltar|retorne|pressione voltar|aperte voltar)$").matches(normalized)) {
             return LocalAction(LocalActionType.BACK)
         }
+        if (Regex("^(pressione|aperte|tecla)?\\s*(enter|enviar|pesquisar agora)$").matches(normalized)) {
+            return LocalAction(LocalActionType.ENTER)
+        }
         if (Regex("^(tela inicial|ir para inicio|ir para home|home|voltar para inicio)$").matches(normalized)) {
             return LocalAction(LocalActionType.HOME)
         }
@@ -146,7 +149,10 @@ object LocalAutomationEngine {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(KEY_STATUS, status)
             .apply()
+        context.sendBroadcast(android.content.Intent(ACTION_STATUS).setPackage(context.packageName).putExtra("status", status))
     }
+
+    const val ACTION_STATUS = "com.neuralhud.mobile.AUTOMATION_STATUS"
 
     fun getStatus(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
