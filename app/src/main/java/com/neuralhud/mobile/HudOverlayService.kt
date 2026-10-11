@@ -16,6 +16,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
 import android.view.Gravity
+import android.widget.FrameLayout
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -213,7 +214,7 @@ class HudOverlayService : Service() {
         }
         val scroll = ScrollView(this).apply {
             isFillViewport = false
-            addView(controls, ScrollView.LayoutParams(-1, -2))
+            addView(controls, FrameLayout.LayoutParams(-1, -2))
         }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
