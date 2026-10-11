@@ -342,7 +342,7 @@ class HudOverlayService : Service() {
         val screenHeight = resources.displayMetrics.heightPixels
         params.x = (bubbleParams.x + bubbleParams.width + dp(5)).coerceAtMost((screenWidth - params.width - dp(8)).coerceAtLeast(dp(8)))
         if (params.x < dp(8)) params.x = dp(8)
-        params.y = (bubbleParams.y + dp(10)).coerceAtMost((screenHeight - dp(70)).coerceAtLeast(dp(8)))
+        params.y = (bubbleParams.y + dp(10)).coerceAtMost((screenHeight - params.height - dp(12)).coerceAtLeast(dp(8)))
         params.y = params.y.coerceAtLeast(dp(8))
         try {
             if (panelView.isAttachedToWindow) windowManager.updateViewLayout(panelView, params)
