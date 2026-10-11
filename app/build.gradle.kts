@@ -15,7 +15,7 @@ val canSignRelease = listOf(
 ).all { !it.isNullOrBlank() }
 
 android {
-    namespace = "com.neuralhud.mobile"
+    namespace = "com.jarvis.assistant"
     compileSdk = 36
 
     defaultConfig {
