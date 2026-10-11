@@ -69,7 +69,7 @@ class HudOverlayService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "Permita que o Neural HUD apareça sobre outros apps.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Permita que o J.A.R.V.I.S. apareça sobre outros apps.", Toast.LENGTH_LONG).show()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -91,7 +91,7 @@ class HudOverlayService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Neural HUD em execução", NotificationManager.IMPORTANCE_LOW)
+            val channel = NotificationChannel(CHANNEL_ID, "J.A.R.V.I.S. em execução", NotificationManager.IMPORTANCE_LOW)
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
         }
     }
@@ -110,7 +110,7 @@ class HudOverlayService : Service() {
             Notification.Builder(this)
         }
         return builder
-            .setContentTitle("Neural HUD ativo")
+            .setContentTitle("J.A.R.V.I.S. ativo")
             .setContentText("Toque na esfera para abrir os comandos.")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(launch)
@@ -132,11 +132,11 @@ class HudOverlayService : Service() {
             y = prefs.getInt(KEY_Y, dp(180)).coerceAtLeast(0)
         }
         bubble = ImageView(this).apply {
-            setImageResource(R.drawable.ic_neural_hud_foreground)
+            setImageResource(R.drawable.ic_jarvis_orb)
             scaleType = ImageView.ScaleType.FIT_CENTER
             setPadding(dp(4), dp(4), dp(4), dp(4))
             background = rounded(Color.rgb(9, 20, 34), Color.rgb(53, 221, 235), 50, 2)
-            contentDescription = "Neural HUD. Toque para abrir ou fechar o painel."
+            contentDescription = "J.A.R.V.I.S.. Toque para abrir ou fechar o painel."
             elevation = dp(8).toFloat()
             setOnTouchListener { _, event -> handleBubbleTouch(event) }
         }
@@ -208,7 +208,7 @@ class HudOverlayService : Service() {
         }
         val titleBlock = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         titleBlock.addView(TextView(this).apply {
-            text = "J.A.R.V.I.S. • NEURAL HUD"
+            text = "J.A.R.V.I.S. • J.A.R.V.I.S."
             textSize = 18f
             setTextColor(Color.rgb(91, 224, 238))
             letterSpacing = 0.06f
@@ -290,7 +290,7 @@ class HudOverlayService : Service() {
         buildSettings(settingsContent!!)
 
         val footer = TextView(this).apply {
-            text = "Ações em outros aplicativos exigem que você ative o serviço Neural HUD nas configurações do Android."
+            text = "Ações em outros aplicativos exigem que você ative o serviço J.A.R.V.I.S. nas configurações do Android."
             textSize = 11f
             setTextColor(Color.rgb(160, 183, 197))
             setPadding(dp(2), dp(12), dp(2), dp(6))
