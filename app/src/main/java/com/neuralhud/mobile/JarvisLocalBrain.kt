@@ -40,10 +40,14 @@ object JarvisLocalBrain {
     const val CONNECTIONS_PER_NEURON = 16
     private const val MODEL_VERSION = 1
     private const val LEARNING_RATE = 0.045f
-    private const val TRAINING_EPOCHS = 7
+    private const val TRAINING_EPOCHS = 3
     private const val FILE_NAME = "jarvis-brain-2678.bin"
 
     private var model: Model? = null
+
+    fun prewarm(context: Context) {
+        Thread({ synchronized(this) { getModel(context.applicationContext) } }, "jarvis-local-brain-init").apply { isDaemon = true }.start()
+    }
 
     @Synchronized
     fun classify(context: Context, text: String): IntentGuess {
@@ -140,7 +144,7 @@ object JarvisLocalBrain {
             JarvisIntent.QUESTION to listOf("o que é inteligência artificial", "por que o céu é azul", "me explique a gravidade", "quem inventou o telefone", "como funciona uma bateria", "what is a neural network"),
             JarvisIntent.HELP to listOf("ajuda", "o que você sabe fazer", "mostrar comandos suportados", "help me", "quais são suas funções")
         )
-        return rows.flatMap { (intent, phrases) -> phrases.map { it to intent } }
+        return rows.flatMap { (intent, phrases) -> phrases.take(3).map { it to intent } }
     }
 
     private class Model {
