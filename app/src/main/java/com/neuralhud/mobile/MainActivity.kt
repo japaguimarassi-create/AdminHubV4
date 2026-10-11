@@ -29,6 +29,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         window.statusBarColor = Color.rgb(13, 22, 33)
         window.navigationBarColor = Color.rgb(13, 22, 33)
+        JarvisLocalBrain.prewarm(this)
         configureAssistantScreen = intent.getBooleanExtra(EXTRA_CONFIGURE_ASSISTANT, false)
         renderScreen()
 
@@ -56,13 +57,13 @@ class MainActivity : Activity() {
         page.addView(icon, LinearLayout.LayoutParams(dp(82), dp(82)).apply { bottomMargin = dp(16) })
 
         page.addView(TextView(this).apply {
-            text = "NEURAL HUD"
+            text = "J.A.R.V.I.S."
             textSize = 27f
             gravity = Gravity.CENTER
             setTextColor(Color.rgb(91, 224, 238))
         }, matchWrap())
         page.addView(TextView(this).apply {
-            text = "Um painel flutuante. Um campo de comando. Ferramentas separadas."
+            text = "Assistente local, comandos globais e HUD flutuante."
             textSize = 14f
             gravity = Gravity.CENTER
             setTextColor(Color.rgb(174, 194, 207))
