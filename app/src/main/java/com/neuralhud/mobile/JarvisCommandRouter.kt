@@ -191,7 +191,7 @@ object JarvisCommandRouter {
             return "Instrução enviada ao núcleo de automação local."
         }
 
-        if (normalized.contains("?") || startsWithQuestion(normalized) || guess.intent == JarvisIntent.QUESTION) {
+        if (normalized.contains("?") || startsWithQuestion(normalized)) {
             return launchWebSearch(appContext, raw)
         }
 
