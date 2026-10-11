@@ -22,8 +22,8 @@ android {
         applicationId = "com.neuralhud.mobile"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "5.0.0"
+        versionCode = 6
+        versionName = "6.0.0"
     }
 
     compileOptions {
@@ -54,7 +54,7 @@ android {
             }
         }
         debug {
-            applicationIdSuffix = ".debug5"
+            applicationIdSuffix = ".debug6"
             versionNameSuffix = "-debug"
         }
     }
