@@ -258,12 +258,19 @@ class HudOverlayService : Service() {
         commandInput = input
         content.addView(input, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
 
-        primaryButton(content, "Salvar e ativar") { saveInstruction() }
+        primaryButton(content, "Executar comando / ativar regra") { saveInstruction() }
 
         val firstRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         secondaryButton(firstRow, "Arquivos e ferramentas") { openTools() }
         secondaryButton(firstRow, "Acessibilidade") { openAccessibilitySettings() }
         content.addView(firstRow, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+
+        val assistantRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        secondaryButton(assistantRow, "J.A.R.V.I.S. global") { openGlobalAssistant() }
+        secondaryButton(assistantRow, "Estado da IA") {
+            refreshStatus("Núcleo local com 2.678 neurônios. Comandos comuns são tratados localmente; perguntas gerais podem abrir a Web, sem API de IA.")
+        }
+        content.addView(assistantRow, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
 
         val secondRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         secondaryButton(secondRow, "Pausar automação") {
@@ -370,12 +377,34 @@ class HudOverlayService : Service() {
     }
 
     private fun saveInstruction() {
-        val result = LocalAutomationEngine.saveInstruction(this, commandInput?.text?.toString().orEmpty())
+        val raw = commandInput?.text?.toString().orEmpty()
+        val result = JarvisCommandRouter.execute(this, raw)
         refreshStatus(result)
-        if (result.startsWith("Instrução salva")) {
+        if (raw.isNotBlank()) {
             val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             commandInput?.let { manager.hideSoftInputFromWindow(it.windowToken, 0) }
             commandInput?.clearFocus()
+        }
+    }
+
+    private fun openGlobalAssistant() {
+        val roleHeld = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val manager = getSystemService(android.app.role.RoleManager::class.java)
+            manager?.isRoleAvailable(android.app.role.RoleManager.ROLE_ASSISTANT) == true &&
+                manager.isRoleHeld(android.app.role.RoleManager.ROLE_ASSISTANT)
+        } else false
+        try {
+            if (roleHeld) {
+                startActivity(Intent(Intent.ACTION_ASSIST).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } else {
+                startActivity(
+                    Intent(this, MainActivity::class.java)
+                        .putExtra(MainActivity.EXTRA_CONFIGURE_ASSISTANT, true)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
+        } catch (_: Exception) {
+            refreshStatus("Não consegui abrir o assistente do sistema. Abra as configurações de Assistente padrão do Android.")
         }
     }
 
