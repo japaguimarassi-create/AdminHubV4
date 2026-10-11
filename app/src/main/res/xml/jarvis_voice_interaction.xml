@@ -3,4 +3,4 @@
     android:sessionService="com.neuralhud.mobile.JarvisVoiceInteractionSessionService"
     android:supportsAssist="true"
     android:supportsLaunchVoiceAssistFromKeyguard="false"
-    android:supportsLocalInteraction="true" />
+ />
