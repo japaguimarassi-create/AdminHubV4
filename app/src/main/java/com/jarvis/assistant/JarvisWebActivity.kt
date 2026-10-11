@@ -56,7 +56,7 @@ class JarvisWebActivity : Activity() {
             setHintTextColor(Color.rgb(105, 134, 156))
             setTextColor(Color.WHITE)
             textSize = 14f
-            singleLine = true
+            isSingleLine = true
             imeOptions = EditorInfo.IME_ACTION_SEARCH
             setPadding(dp(10), dp(8), dp(6), dp(8))
             background = GradientDrawable().apply { setColor(Color.TRANSPARENT) }
