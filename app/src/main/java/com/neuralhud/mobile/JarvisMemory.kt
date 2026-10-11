@@ -28,6 +28,8 @@ object JarvisMemory {
             return "A memória local atingiu o limite de $MAX_COMMANDS comandos."
         }
         commands.put(phrase, lesson.command)
+        val learnedIntent = JarvisLocalBrain.classify(context.applicationContext, lesson.command).intent
+        JarvisLocalBrain.learn(context.applicationContext, lesson.phrase, learnedIntent)
         prefs.edit().putString(KEY_COMMANDS, commands.toString()).apply()
         return "Aprendi localmente: “${lesson.phrase}” executa “${lesson.command}”. Sem API."
     }
