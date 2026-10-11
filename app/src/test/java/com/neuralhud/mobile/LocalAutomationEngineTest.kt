@@ -47,4 +47,32 @@ class LocalAutomationEngineTest {
     fun rejectsUnknownInstructionInsteadOfGuessing() {
         assertNull(LocalAutomationEngine.parse("Faça algo inteligente"))
     }
+    @Test
+    fun parsesNaturalCommandWithoutComma() {
+        val result = LocalAutomationEngine.parse("Quando abrir YouTube pesquise gatos")
+        assertNotNull(result)
+        assertEquals("YouTube", result!!.targetApp)
+        assertEquals(listOf(LocalAction(LocalActionType.SEARCH, "gatos")), result.actions)
+    }
+
+    @Test
+    fun parsesWaitDurationInSeconds() {
+        val result = LocalAutomationEngine.parse("aguarde 2 segundos")
+        assertNotNull(result)
+        assertEquals(LocalAction(LocalActionType.WAIT, "2000"), result!!.actions.single())
+    }
+
+    @Test
+    fun supportsLocalMacroTeachingSyntax() {
+        assertEquals(
+            LearnedCommand("abrir aula", "abra YouTube"),
+            JarvisMemory.parseTeachingCommand("ensine abrir aula => abra YouTube")
+        )
+    }
+
+    @Test
+    fun neuralCoreHasExactly2678HiddenUnits() {
+        assertEquals(2678, JarvisLocalBrain.HIDDEN_NEURONS)
+    }
+
 }
