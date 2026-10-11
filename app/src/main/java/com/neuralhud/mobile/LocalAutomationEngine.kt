@@ -59,8 +59,8 @@ object LocalAutomationEngine {
         var target: String? = null
         var actionText = raw
         val patterns = listOf(
-            Regex("(?i)^(?:quando|ao|assim que)\\s+(?:eu\\s+)?(?:abrir|abro|entrar\\s+(?:em|no|na))\\s+(.+?)\\s*[,;:]\\s*(.+)$"),
-            Regex("(?i)^quando\\s+(?:o\\s+)?app\\s+(.+?)\\s+(?:abrir|for\\s+aberto)\\s*[,;:]\\s*(.+)$")
+            Regex("(?i)^(?:quando|ao|assim que)\\s+(?:eu\\s+)?(?:abrir|abro|entrar\\s+(?:em|no|na))\\s+(.+?)(?:\\s*[,;:]\\s*|\\s+(?=(?:pesquise|pesquisar|procure|procurar|busque|buscar|digite|digitar|escreva|escrever|insira|inserir|preencha|toque|tocar|clique|clicar|pressione|aperte|volte|voltar|retorne|role|deslize|abra|abrir|inicie|iniciar|aguarde|espere)\\b))(.+)$"),
+            Regex("(?i)^quando\\s+(?:o\\s+)?app\\s+(.+?)\\s+(?:abrir|for\\s+aberto)(?:\\s*[,;:]\\s*|\\s+)(.+)$")
         )
         for (pattern in patterns) {
             val match = pattern.matchEntire(raw)
@@ -72,7 +72,7 @@ object LocalAutomationEngine {
             }
         }
         val pieces = actionText.split(
-            Regex("(?i)\\s*(?:;|,\\s*(?=(?:digite|escreva|insira|toque|clique|pressione|aperte|pesquise|procure|busque|volte|role|abra|inicie))|\\be\\s+depois\\b|\\bdepois\\b|\\be\\s+então\\b|\\bentão\\b|\\s+e\\s+(?=(?:digite|escreva|insira|toque|clique|pressione|aperte|pesquise|procure|busque|volte|role|abra|inicie)))\\s*")
+            Regex("(?i)\\s*(?:;|,\\s*(?=(?:digite|digitar|escreva|escrever|insira|inserir|preencha|toque|tocar|clique|clicar|pressione|aperte|pesquise|pesquisar|procure|procurar|busque|buscar|volte|voltar|retorne|role|deslize|abra|abrir|inicie|iniciar|aguarde|espere))|\\be\\s+depois\\b|\\bdepois\\b|\\be\\s+então\\b|\\bentão\\b|\\s+e\\s+(?=(?:digite|digitar|escreva|escrever|insira|inserir|preencha|toque|tocar|clique|clicar|pressione|aperte|pesquise|pesquisar|procure|procurar|busque|buscar|volte|voltar|retorne|role|deslize|abra|abrir|inicie|iniciar|aguarde|espere)))\\s*")
         ).map { it.trim().removePrefix(",").trim() }.filter { it.isNotBlank() }
         if (pieces.isEmpty()) return null
         val actions = pieces.map { parseAction(it) ?: return null }
@@ -82,7 +82,7 @@ object LocalAutomationEngine {
     private fun parseAction(raw: String): LocalAction? {
         val text = raw.trim().removePrefix(",").trim()
         val normalized = normalize(text)
-        if (Regex("^(volte|voltar|retorne|pressione voltar|aperte voltar)$").matches(normalized)) {
+        if (Regex("^(volte|voltar|retorne|retornar|pressione voltar|aperte voltar|fechar teclado|sair da tela)$").matches(normalized)) {
             return LocalAction(LocalActionType.BACK)
         }
         if (Regex("^(pressione|aperte|tecla)?\\s*(enter|enviar|pesquisar agora)$").matches(normalized)) {
@@ -91,27 +91,27 @@ object LocalAutomationEngine {
         if (Regex("^(tela inicial|ir para inicio|ir para tela inicial|va para tela inicial|volte para tela inicial|ir para home|home|voltar para inicio)$").matches(normalized)) {
             return LocalAction(LocalActionType.HOME)
         }
-        if (Regex("^(role para baixo|rola para baixo|desca|desca a pagina|deslize para baixo|role abaixo|role a pagina para baixo|scroll down)$").matches(normalized)) {
+        if (Regex("^(role para baixo|rola para baixo|desca|descer|desca a pagina|deslize para baixo|deslize a tela para baixo|role abaixo|role a pagina para baixo|scroll down|mostre mais)$").matches(normalized)) {
             return LocalAction(LocalActionType.SCROLL_DOWN)
         }
-        if (Regex("^(role para cima|suba a pagina|role a pagina para cima|scroll up)$").matches(normalized)) {
+        if (Regex("^(role para cima|rola para cima|suba a pagina|subir|deslize a tela para cima|role a pagina para cima|scroll up)$").matches(normalized)) {
             return LocalAction(LocalActionType.SCROLL_UP)
         }
         if (normalized == "aguarde" || normalized == "espere") return LocalAction(LocalActionType.WAIT, "600")
         Regex("^(?:aguarde|espere)\\s+(\\d{1,3})\\s*(?:ms|milissegundos)?$").matchEntire(normalized)?.let {
             return LocalAction(LocalActionType.WAIT, it.groupValues[1].toInt().coerceIn(100, 3000).toString())
         }
-        Regex("^(?:pesquise|pesquisar|procure|procurar|busque|buscar|pesquisa|busca)\\s+(.+)$", RegexOption.IGNORE_CASE)
+        Regex("^(?:pesquise|pesquisar|pesquisa|procure|procurar|procura|busque|buscar|busca|encontre|encontrar|search|google)\\s+(?:por\\s+)?(.+)$", RegexOption.IGNORE_CASE)
             .find(text)?.let { return LocalAction(LocalActionType.SEARCH, cleanArgument(it.groupValues[1])) }
-        Regex("^(?:digite|escreva|insira|preencha)\\s+(?:o\\s+texto\\s+)?(.+)$", RegexOption.IGNORE_CASE)
+        Regex("^(?:digite|digitar|escreva|escrever|insira|inserir|preencha|preencher|coloque|colocar|type)\\s+(?:o\\s+texto\\s+)?(.+)$", RegexOption.IGNORE_CASE)
             .find(text)?.let { return LocalAction(LocalActionType.TYPE_TEXT, cleanArgument(it.groupValues[1])) }
-        Regex("^(?:toque|clique|pressione|aperte|selecione)\\s+(?:em|no|na|nos|nas|o|a)?\\s*(.+)$", RegexOption.IGNORE_CASE)
+        Regex("^(?:toque|tocar|clique|clicar|pressione|aperte|selecione|select|tap)\\s+(?:em|no|na|nos|nas|o|a)?\\s*(.+)$", RegexOption.IGNORE_CASE)
             .find(text)?.let {
                 val label = cleanArgument(it.groupValues[1])
                 if (normalize(label) in setOf("voltar", "back")) return LocalAction(LocalActionType.BACK)
                 return LocalAction(LocalActionType.CLICK_TEXT, label)
             }
-        Regex("^(?:abra|abrir|inicie|iniciar|execute)\\s+(.+)$", RegexOption.IGNORE_CASE)
+        Regex("^(?:abra|abrir|abre|inicie|iniciar|inicialize|execute|executar|rode|rodar|lance|launch|open|start)\\s+(.+)$", RegexOption.IGNORE_CASE)
             .find(text)?.let { return LocalAction(LocalActionType.OPEN_APP, cleanArgument(it.groupValues[1])) }
         return null
     }
