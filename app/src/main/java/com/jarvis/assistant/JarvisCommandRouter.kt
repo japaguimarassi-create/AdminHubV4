@@ -241,7 +241,8 @@ object JarvisCommandRouter {
                 val result = MathParser(mathExpression).evaluate()
                 "Resultado: ${formatNumber(result)}"
             } catch (_: Exception) {
-                "Não consegui calcular essa expressão. Exemplos: “calcule 32 * 45” ou “quanto é (12 + 4) / 2”."
+                JarvisInternalSandbox.answerQuestion(appContext, raw)
+                    ?: "Não consegui calcular essa expressão. Exemplos: “calcule 32 * 45” ou “quanto é (12 + 4) / 2”."
             }
         }
 
@@ -333,6 +334,8 @@ object JarvisCommandRouter {
             return "Não encontrei um aplicativo lançável com o nome “$requested”. Tente o nome mostrado na tela inicial."
         }
 
+        JarvisInternalSandbox.answerQuestion(appContext, raw)?.let { return it }
+
         val search = searchPattern.matchEntire(raw)
         if (search != null) return launchWebSearch(appContext, search.groupValues[1].trim())
         val parsed = LocalAutomationEngine.parse(raw)
@@ -407,6 +410,9 @@ object JarvisCommandRouter {
             emptyList()
         }
     }
+
+    internal fun inspectLaunchableApp(context: Context, requested: String): String? =
+        findLaunchableApp(context.applicationContext, requested)?.label
 
     private fun findLaunchableApp(context: Context, requested: String): LaunchTarget? {
         var target = normalize(cleanAppName(requested))
