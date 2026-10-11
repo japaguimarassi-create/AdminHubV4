@@ -232,6 +232,9 @@ class MainActivity : Activity() {
         addButton(page, "Definir J.A.R.V.I.S. como assistente", true) {
             requestAssistantRole()
         }
+        addButton(page, "Ativar microfone para voz offline", false) {
+            requestMicrophonePermission()
+        }
         addButton(page, "Configurar automação", false) {
             try {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -270,8 +273,8 @@ class MainActivity : Activity() {
     }
 
     override fun onResume() {
-        if (assistantInvocation) return
         super.onResume()
+        if (assistantInvocation) return
         if (::status.isInitialized && !configureAssistantScreen && Settings.canDrawOverlays(this) && !hudLaunched) {
             launchHud()
         } else if (::status.isInitialized && permissionScreenOpened && !Settings.canDrawOverlays(this)) {
@@ -284,12 +287,16 @@ class MainActivity : Activity() {
             status.text = "Este Android não oferece a seleção de assistente via RoleManager."
             return
         }
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            @Suppress("DEPRECATION")
-            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_MIC_FOR_ASSISTANT)
+        launchAssistantRolePicker()
+    }
+
+    private fun requestMicrophonePermission() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            status.text = "Microfone já autorizado. A voz offline estará disponível quando o Android tiver um modelo local compatível."
             return
         }
-        launchAssistantRolePicker()
+        @Suppress("DEPRECATION")
+        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_ASSISTANT_VOICE)
     }
 
     private fun launchAssistantRolePicker() {
@@ -316,17 +323,12 @@ class MainActivity : Activity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_ASSISTANT_VOICE) {
-            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) startAssistantVoiceInput()
-            else status.text = "Microfone negado; digite o comando no campo."
-            return
-        }
-        if (requestCode == REQUEST_MIC_FOR_ASSISTANT) {
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-                status.text = "Microfone permitido. Agora confirme o assistente padrão."
+                if (assistantInvocation) startAssistantVoiceInput()
+                else status.text = "Microfone permitido. Se houver reconhecimento offline instalado, a voz poderá ser usada."
             } else {
-                status.text = "Microfone negado; o assistente continuará aceitando comandos digitados."
+                status.text = "Microfone negado; você ainda pode usar comandos digitados."
             }
-            launchAssistantRolePicker()
         }
     }
 
@@ -387,7 +389,6 @@ class MainActivity : Activity() {
     companion object {
         const val EXTRA_CONFIGURE_ASSISTANT = "configure_jarvis_assistant"
         private const val REQUEST_ASSISTANT_ROLE = 6801
-        private const val REQUEST_MIC_FOR_ASSISTANT = 6802
         private const val REQUEST_ASSISTANT_VOICE = 6803
     }
 }
