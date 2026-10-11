@@ -1,0 +1,8 @@
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_description"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="300"
+    android:canRetrieveWindowContent="true"
+    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows"
+    android:packageNames="com.android.chrome,com.google.android.apps.chrome,com.neuralhud.mobile" />
