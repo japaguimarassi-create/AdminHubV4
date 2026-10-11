@@ -1,4 +1,4 @@
 <resources>
-    <color name="neural_hud_icon_bg">#091422</color>
-    <color name="neural_hud_cyan">#35DDEB</color>
+    <color name="jarvis_icon_bg">#070C16</color>
+    <color name="jarvis_blue">#2C8EFF</color>
 </resources>
