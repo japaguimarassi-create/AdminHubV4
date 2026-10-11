@@ -3,10 +3,10 @@ package com.jarvis.assistant
 import java.text.Normalizer
 import java.util.Locale
 
-enum class JarvisIntentKind { LOCAL_COMMAND, WEB_SEARCH, NATURAL_QUESTION, UNKNOWN }
+enum class SafeCommandKind { LOCAL_COMMAND, WEB_SEARCH, NATURAL_QUESTION, UNKNOWN }
 
-data class JarvisIntent(
-    val kind: JarvisIntentKind,
+data class SafeCommandClassification(
+    val kind: SafeCommandKind,
     val cleanedText: String,
     val needsConfirmation: Boolean,
     val reason: String
@@ -45,12 +45,12 @@ object JarvisCommandInterpreter {
         return normalized.replace(Regex("[.!]+$"), "").trim()
     }
 
-    fun classify(raw: String): JarvisIntent {
+    fun classify(raw: String): SafeCommandClassification {
         val hadQuestionMark = raw.trim().endsWith("?")
         val cleaned = normalizeTranscript(raw)
-        if (cleaned.isBlank()) return JarvisIntent(JarvisIntentKind.UNKNOWN, "", true, "A transcrição veio vazia.")
+        if (cleaned.isBlank()) return SafeCommandClassification(SafeCommandKind.UNKNOWN, "", true, "A transcrição veio vazia.")
         if (searchPattern.matches(cleaned)) {
-            return JarvisIntent(JarvisIntentKind.WEB_SEARCH, cleaned, false, "Pesquisa pedida explicitamente.")
+            return SafeCommandClassification(SafeCommandKind.WEB_SEARCH, cleaned, false, "Pesquisa pedida explicitamente.")
         }
         if (localCommandPatterns.any { it.matches(cleaned) }) {
             val caution = cleaned.startsWith("quando abrir ") ||
@@ -58,16 +58,16 @@ object JarvisCommandInterpreter {
                 cleaned.startsWith("assim que abrir ") ||
                 cleaned.startsWith("quando o app ") ||
                 listOf("digite ", "toque ", "clique ", "envie ", "mande ", "apague ", "delete ", "compre ", "pague ", "publique ", "compartilhe ").any { cleaned.startsWith(it) }
-            return JarvisIntent(
-                JarvisIntentKind.LOCAL_COMMAND,
+            return SafeCommandClassification(
+                SafeCommandKind.LOCAL_COMMAND,
                 cleaned,
                 caution,
                 if (caution) "A ação pode alterar outro aplicativo." else "Comando local reconhecido."
             )
         }
         if (hadQuestionMark || questionStarts.any { cleaned.startsWith(it) }) {
-            return JarvisIntent(JarvisIntentKind.NATURAL_QUESTION, cleaned, false, "Pergunta em linguagem natural.")
+            return SafeCommandClassification(SafeCommandKind.NATURAL_QUESTION, cleaned, false, "Pergunta em linguagem natural.")
         }
-        return JarvisIntent(JarvisIntentKind.UNKNOWN, cleaned, true, "Não há correspondência suficiente para executar com segurança.")
+        return SafeCommandClassification(SafeCommandKind.UNKNOWN, cleaned, true, "Não há correspondência suficiente para executar com segurança.")
     }
 }

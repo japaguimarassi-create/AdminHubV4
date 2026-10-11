@@ -52,6 +52,7 @@ class MainActivity : Activity() {
         assistantInvocation = intent.action == Intent.ACTION_ASSIST
         render()
         renderConversation()
+        if (intent.getBooleanExtra(EXTRA_CONFIGURE_ASSISTANT, false)) window.decorView.post { requestAssistantRole() }
         if (assistantInvocation) window.decorView.post { startVoiceInput() }
     }
 
@@ -207,7 +208,7 @@ class MainActivity : Activity() {
         val intent = JarvisCommandInterpreter.classify(command)
         val answer = when {
             isGreeting(intent.cleanedText) -> "Olá. Estou pronto para ajudar. Posso executar comandos locais disponíveis ou pesquisar informações na Web."
-            intent.kind == JarvisIntentKind.UNKNOWN ->
+            intent.kind == SafeCommandKind.UNKNOWN ->
                 "Não consegui interpretar essa frase como um comando seguro, então não executei nada. Reformule o pedido ou use “Pesquisar Web” para uma consulta explícita."
             else -> try { JarvisCommandRouter.execute(this, command) }
             catch (e: Exception) { "Não consegui concluir a ação: " + (e.message ?: e.javaClass.simpleName) }
@@ -514,6 +515,7 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        const val EXTRA_CONFIGURE_ASSISTANT = "configure_jarvis_assistant"
         private const val REQUEST_ASSISTANT_ROLE = 8801
         private const val REQUEST_MIC = 8802
     }

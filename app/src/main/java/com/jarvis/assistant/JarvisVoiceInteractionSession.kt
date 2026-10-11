@@ -176,7 +176,7 @@ class JarvisVoiceInteractionSession(private val host: Context) : VoiceInteractio
             }
         }
         val intent = JarvisCommandInterpreter.classify(text)
-        if (intent.kind == JarvisIntentKind.UNKNOWN) {
+        if (intent.kind == SafeCommandKind.UNKNOWN) {
             pendingCommand = null
             input?.setText(text)
             executeButton?.isEnabled = false
@@ -199,7 +199,7 @@ class JarvisVoiceInteractionSession(private val host: Context) : VoiceInteractio
             return
         }
         val intent = JarvisCommandInterpreter.classify(text)
-        if (intent.kind == JarvisIntentKind.UNKNOWN) {
+        if (intent.kind == SafeCommandKind.UNKNOWN) {
             status?.text = "Não reconheci essa instrução. Nenhuma ação foi executada."
             pendingCommand = null
             executeButton?.isEnabled = false
