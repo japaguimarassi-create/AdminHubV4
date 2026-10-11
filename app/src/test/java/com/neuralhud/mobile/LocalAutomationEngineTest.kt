@@ -1,4 +1,4 @@
-package com.neuralhud.mobile
+package com.jarvis.assistant
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
