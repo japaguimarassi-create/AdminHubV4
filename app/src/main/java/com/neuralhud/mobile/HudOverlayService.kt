@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Bundle
@@ -24,6 +25,7 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.content.Context
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -34,7 +36,7 @@ import android.text.InputType
 
 class HudOverlayService : Service() {
     private lateinit var windowManager: WindowManager
-    private var bubble: TextView? = null
+    private var bubble: ImageView? = null
     private var panel: LinearLayout? = null
     private var statusView: TextView? = null
     private var commandInput: EditText? = null
@@ -123,12 +125,15 @@ class HudOverlayService : Service() {
             x = dp(12)
             y = dp(180)
         }
-        bubble = TextView(this).apply {
-            text = "N"
-            textSize = 25f
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.rgb(0, 151, 167))
+        bubble = ImageView(this).apply {
+            setImageResource(R.drawable.ic_neural_hud_foreground)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.rgb(9, 20, 34))
+                setStroke(dp(2), Color.rgb(53, 221, 235))
+            }
             alpha = prefs.getFloat("bubble_alpha", 0.9f)
             elevation = dp(8).toFloat()
             contentDescription = "Neural HUD. Toque para abrir ou minimizar o painel."
